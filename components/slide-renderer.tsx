@@ -138,15 +138,10 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
       >
         <div className="text-center">
           <div className="mb-8">
-            <div className="text-6xl font-bold text-gray-800 mb-2">GMDC</div>
-            <div className="text-lg text-gray-700 font-semibold">FUELING THE GROWTH</div>
-          </div>
-
-          <div className="mb-8">
             <h1 className="text-4xl font-bold text-amber-700 mb-2">{slide.title}</h1>
             <div className="w-64 h-1 bg-amber-600 mx-auto mb-4"></div>
-            {slide.subtitle && <p className="text-xl text-gray-700">{slide.subtitle}</p>}
             {slide.date && <p className="text-lg text-gray-600 mt-4">{slide.date}</p>}
+            {slide.subtitle && <p className="text-xl text-gray-700 mt-2">{slide.subtitle}</p>}
           </div>
         </div>
 
@@ -207,12 +202,7 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
         }}
       >
         <div className="text-center">
-          <div className="mb-8">
-            <div className="text-6xl font-bold text-gray-800 mb-2">GMDC</div>
-            <div className="text-lg text-gray-700 font-semibold">FUELING THE GROWTH</div>
-          </div>
-
-          <div className="mb-8">
+          <div className="mb-8" style={{ marginTop: "10px" }}>
             <h1 className="text-5xl font-bold text-amber-700 mb-2">THANK YOU</h1>
             <div className="w-64 h-1 bg-amber-600 mx-auto"></div>
           </div>
