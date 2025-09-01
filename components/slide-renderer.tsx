@@ -23,6 +23,14 @@ interface SlideRendererProps {
   totalSlides: number
 }
 
+const splitContentIntoSlides = (content: any[], maxItemsPerSlide = 6) => {
+  const slides = []
+  for (let i = 0; i < content.length; i += maxItemsPerSlide) {
+    slides.push(content.slice(i, i + maxItemsPerSlide))
+  }
+  return slides
+}
+
 export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRendererProps) {
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
 
@@ -90,14 +98,14 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
     if (!tableData || !tableData.headers || !tableData.rows) return null
 
     return (
-      <div className="overflow-auto max-h-64">
-        <table className="w-full border-collapse border border-gray-300 dark:border-gray-600 text-sm">
-          <thead className="sticky top-0">
+      <div className="h-full">
+        <table className="w-full border-collapse border border-gray-300 dark:border-gray-600 text-xs">
+          <thead>
             <tr className="bg-gray-100 dark:bg-gray-800">
               {tableData.headers.map((header: string, index: number) => (
                 <th
                   key={index}
-                  className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-left font-semibold text-xs"
+                  className="border border-gray-300 dark:border-gray-600 px-1 py-1 text-left font-semibold text-xs"
                 >
                   {header}
                 </th>
@@ -105,13 +113,13 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
             </tr>
           </thead>
           <tbody>
-            {tableData.rows.map((row: any[], rowIndex: number) => (
+            {tableData.rows.slice(0, 8).map((row: any[], rowIndex: number) => (
               <tr
                 key={rowIndex}
                 className={rowIndex % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"}
               >
                 {row.map((cell: any, cellIndex: number) => (
-                  <td key={cellIndex} className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs">
+                  <td key={cellIndex} className="border border-gray-300 dark:border-gray-600 px-1 py-1 text-xs">
                     {cell}
                   </td>
                 ))}
@@ -119,6 +127,11 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
             ))}
           </tbody>
         </table>
+        {tableData.rows.length > 8 && (
+          <div className="text-center text-xs text-gray-600 mt-2 italic">
+            ...continued on next slide ({tableData.rows.length - 8} more rows)
+          </div>
+        )}
       </div>
     )
   }
@@ -154,7 +167,7 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
   if (slide.type === "table-of-contents") {
     return (
       <div
-        className="h-full p-8 flex flex-col"
+        className="h-full p-4 flex flex-col"
         style={{
           backgroundImage:
             "url(https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Env%20PPTsENV.%20PPT%20%20%2823.01.2023%29.jpg-GzEIJX7CGTKIxusfQ5fi9SSvkA7RKs.jpeg)",
@@ -163,22 +176,50 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
           backgroundRepeat: "no-repeat",
         }}
       >
-        <div className="flex justify-between items-start mb-8">
-          <img src="https://www.gmdcltd.com/assets/img/logo.jpg" alt="GMDC Logo" className="h-12" />
+        <div className="flex justify-between items-start mb-4">
+          <img src="https://www.gmdcltd.com/assets/img/logo.jpg" alt="GMDC Logo" className="h-10" />
           <div className="text-right text-sm text-gray-800">www.gmdcltd.com</div>
         </div>
 
-        <h2 className="text-3xl font-bold text-center mb-8 text-gray-900">Table of Content</h2>
+        <h2 className="text-2xl font-bold text-center mb-6 text-gray-900">Table of Content</h2>
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-2xl mx-auto">
-            {slide.items &&
-              slide.items.map((item: string, index: number) => (
-                <div key={index} className="flex items-start mb-4 text-lg">
-                  <span className="font-semibold text-blue-600 mr-4 flex-shrink-0">{index + 1}.</span>
-                  <span className="text-gray-800 break-words">{item}</span>
+        <div className="flex-1">
+          <div className="max-w-4xl mx-auto h-full">
+            {slide.items && slide.items.length > 10 ? (
+              <div className="grid grid-cols-2 gap-8 h-full">
+                <div className="space-y-3">
+                  {slide.items.slice(0, Math.ceil(slide.items.length / 2)).map((item: string, index: number) => (
+                    <div key={index} className="flex items-start text-base">
+                      <span className="font-semibold text-blue-600 mr-3 flex-shrink-0">{index + 1}.</span>
+                      <span className="text-gray-800 break-words leading-relaxed">{item}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+                <div className="space-y-3">
+                  {slide.items.slice(Math.ceil(slide.items.length / 2)).map((item: string, index: number) => (
+                    <div key={index + Math.ceil(slide.items.length / 2)} className="flex items-start text-base">
+                      <span className="font-semibold text-blue-600 mr-3 flex-shrink-0">
+                        {index + Math.ceil(slide.items.length / 2) + 1}.
+                      </span>
+                      <span className="text-gray-800 break-words leading-relaxed">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {slide.items &&
+                  slide.items.slice(0, 12).map((item: string, index: number) => (
+                    <div key={index} className="flex items-start text-lg">
+                      <span className="font-semibold text-blue-600 mr-4 flex-shrink-0">{index + 1}.</span>
+                      <span className="text-gray-800 break-words leading-relaxed">{item}</span>
+                    </div>
+                  ))}
+                {slide.items && slide.items.length > 12 && (
+                  <div className="text-center text-sm text-gray-600 mt-4 italic">...continued on next slide</div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -187,37 +228,10 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
     )
   }
 
-  if (slide.type === "thank-you") {
-    return (
-      <div
-        className="h-full flex flex-col justify-center items-center p-8 relative"
-        style={{
-          backgroundImage:
-            "url(https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Main%20Slide.jpg-zFK4QxoegV9krsPbigcwKDu936VkkA.jpeg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      >
-        <div className="text-center">
-          <div className="mb-8" style={{ marginTop: "10px" }}>
-            <h1 className="text-5xl font-bold text-amber-700 mb-2">THANK YOU</h1>
-            <div className="w-64 h-1 bg-amber-600 mx-auto"></div>
-          </div>
-        </div>
-
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-gray-700 font-semibold tracking-wider">
-          www.gmdcltd.com
-        </div>
-        <div className="absolute bottom-4 left-4 text-sm text-gray-600">{slideNumber}</div>
-      </div>
-    )
-  }
-
   // Content slide
   return (
     <div
-      className="h-full p-8 flex flex-col"
+      className="h-full p-4 flex flex-col"
       style={{
         backgroundImage:
           "url(https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Env%20PPTsENV.%20PPT%20%20%2823.01.2023%29.jpg-GzEIJX7CGTKIxusfQ5fi9SSvkA7RKs.jpeg)",
@@ -226,26 +240,26 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
         backgroundRepeat: "no-repeat",
       }}
     >
-      <div className="flex justify-between items-start mb-6 flex-shrink-0">
-        <img src="https://www.gmdcltd.com/assets/img/logo.jpg" alt="GMDC Logo" className="h-12" />
+      <div className="flex justify-between items-start mb-4 flex-shrink-0">
+        <img src="https://www.gmdcltd.com/assets/img/logo.jpg" alt="GMDC Logo" className="h-10" />
         <div className="text-right text-sm text-gray-800">www.gmdcltd.com</div>
       </div>
 
-      <div className="mb-6 flex-shrink-0">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4 break-words">{slide.title}</h2>
-        {slide.subtitle && <h3 className="text-lg text-gray-700 mb-4 break-words">{slide.subtitle}</h3>}
+      <div className="mb-4 flex-shrink-0">
+        <h2 className="text-xl font-bold text-gray-900 mb-2 break-words">{slide.title}</h2>
+        {slide.subtitle && <h3 className="text-base text-gray-700 mb-2 break-words">{slide.subtitle}</h3>}
       </div>
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1">
         {slide.content && (
           <div className="text-gray-800 h-full">
             {Array.isArray(slide.content) ? (
-              slide.content.length > 8 ? (
+              slide.content.length > 12 ? (
                 <div className="grid grid-cols-2 gap-6 h-full">
-                  <div className="space-y-2 overflow-y-auto pr-2">
+                  <div className="space-y-2">
                     <ul className="space-y-2">
                       {slide.content
-                        .slice(0, Math.ceil(slide.content.length / 2))
+                        .slice(0, Math.min(8, Math.ceil(slide.content.length / 2)))
                         .map((item: string, index: number) => (
                           <li key={index} className="flex items-start">
                             <span className="text-blue-600 mr-2 flex-shrink-0">➢</span>
@@ -254,41 +268,55 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
                         ))}
                     </ul>
                   </div>
-                  <div className="space-y-2 overflow-y-auto pr-2">
+                  <div className="space-y-2">
                     <ul className="space-y-2">
-                      {slide.content.slice(Math.ceil(slide.content.length / 2)).map((item: string, index: number) => (
-                        <li key={index + Math.ceil(slide.content.length / 2)} className="flex items-start">
-                          <span className="text-blue-600 mr-2 flex-shrink-0">➢</span>
-                          <span className="break-words text-sm leading-relaxed">{item}</span>
-                        </li>
-                      ))}
+                      {slide.content
+                        .slice(Math.ceil(slide.content.length / 2), Math.min(16, slide.content.length))
+                        .map((item: string, index: number) => (
+                          <li key={index + Math.ceil(slide.content.length / 2)} className="flex items-start">
+                            <span className="text-blue-600 mr-2 flex-shrink-0">➢</span>
+                            <span className="break-words text-sm leading-relaxed">{item}</span>
+                          </li>
+                        ))}
                     </ul>
                   </div>
                 </div>
               ) : (
-                <div className="overflow-y-auto h-full pr-2">
-                  <ul className="space-y-2">
-                    {slide.content.map((item: string, index: number) => (
+                <div className="h-full">
+                  <ul className="space-y-3">
+                    {slide.content.slice(0, 10).map((item: string, index: number) => (
                       <li key={index} className="flex items-start">
-                        <span className="text-blue-600 mr-2 flex-shrink-0">➢</span>
+                        <span className="text-blue-600 mr-3 flex-shrink-0">➢</span>
                         <span className="break-words text-sm leading-relaxed">{item}</span>
                       </li>
                     ))}
                   </ul>
+                  {slide.content.length > 10 && (
+                    <div className="text-center text-xs text-gray-600 mt-4 italic">
+                      ...continued on next slide ({slide.content.length - 10} more items)
+                    </div>
+                  )}
                 </div>
               )
             ) : (
-              <div className="overflow-y-auto h-full pr-2">
-                <p className="break-words text-sm leading-relaxed">{slide.content}</p>
+              <div className="h-full">
+                <p className="break-words text-sm leading-relaxed">
+                  {typeof slide.content === "string" && slide.content.length > 1000
+                    ? slide.content.substring(0, 1000) + "..."
+                    : slide.content}
+                </p>
+                {typeof slide.content === "string" && slide.content.length > 1000 && (
+                  <div className="text-center text-xs text-gray-600 mt-4 italic">...continued on next slide</div>
+                )}
               </div>
             )}
           </div>
         )}
 
         {(slide.chart || slide.table) && (
-          <div className="mt-6 space-y-4">
-            {slide.chart && <div className="max-h-64">{renderChart(slide.chart)}</div>}
-            {slide.table && <div className="max-h-48">{renderTable(slide.table)}</div>}
+          <div className="mt-4 space-y-4 h-64">
+            {slide.chart && <div className="h-48">{renderChart(slide.chart)}</div>}
+            {slide.table && <div className="h-48">{renderTable(slide.table)}</div>}
           </div>
         )}
       </div>
