@@ -101,8 +101,13 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
     try {
       console.log("[v0] Generating PowerPoint presentation...")
 
-      // Dynamic import of PptxGenJS to avoid SSR issues
-      const PptxGenJS = (await import("pptxgenjs")).default
+      const { default: PptxGenJS } = await import("pptxgenjs")
+
+      // Check if we're in browser environment
+      if (typeof window === "undefined") {
+        throw new Error("PowerPoint generation must run in browser environment")
+      }
+
       const pptx = new PptxGenJS()
 
       // Set presentation properties
@@ -328,11 +333,31 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
       })
     } catch (error) {
       console.error("[v0] PowerPoint generation error:", error)
-      toast({
-        title: "Export Failed",
-        description: `Error generating PowerPoint: ${error instanceof Error ? error.message : "Unknown error"}`,
-        variant: "destructive",
-      })
+
+      console.log("[v0] Falling back to HTML download...")
+      try {
+        const htmlContent = generatePresentationHTML(generatedPresentation, formData)
+        const dataBlob = new Blob([htmlContent], { type: "text/html" })
+        const url = URL.createObjectURL(dataBlob)
+        const link = document.createElement("a")
+        link.href = url
+        link.download = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.html`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+
+        toast({
+          title: "HTML Presentation Downloaded",
+          description: "PowerPoint generation failed, but HTML version has been downloaded",
+        })
+      } catch (fallbackError) {
+        toast({
+          title: "Export Failed",
+          description: `Error generating presentation: ${error instanceof Error ? error.message : "Unknown error"}`,
+          variant: "destructive",
+        })
+      }
     }
   }
 
