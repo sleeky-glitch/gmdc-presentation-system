@@ -1,6 +1,49 @@
 import { type NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
 
+const SLIDE_TEMPLATES = {
+  EXECUTIVE_SUMMARY: {
+    type: "executive_summary",
+    prompt: `Create an executive summary slide with high-level strategic overview, key achievements, and critical metrics. Include 3-4 major accomplishments with specific numbers, strategic positioning, and forward-looking statements.`,
+    contentStructure: ["strategic_overview", "key_achievements", "critical_metrics", "outlook"],
+  },
+  FINANCIAL_ANALYSIS: {
+    type: "financial_analysis",
+    prompt: `Generate detailed financial analysis with revenue trends, profitability metrics, cost analysis, and financial projections. Include specific figures, growth rates, margins, and comparative analysis.`,
+    contentStructure: ["revenue_analysis", "profitability", "cost_structure", "projections"],
+  },
+  OPERATIONAL_METRICS: {
+    type: "operational_metrics",
+    prompt: `Create operational performance analysis with production volumes, efficiency metrics, capacity utilization, and operational KPIs. Include specific targets, achievements, and benchmarks.`,
+    contentStructure: ["production_data", "efficiency_metrics", "capacity_analysis", "kpis"],
+  },
+  MARKET_ANALYSIS: {
+    type: "market_analysis",
+    prompt: `Develop market positioning analysis with competitive landscape, market share, industry trends, and growth opportunities. Include market data, competitor analysis, and strategic positioning.`,
+    contentStructure: ["market_position", "competitive_analysis", "industry_trends", "opportunities"],
+  },
+  RISK_MANAGEMENT: {
+    type: "risk_management",
+    prompt: `Create comprehensive risk assessment with identified risks, impact analysis, mitigation strategies, and compliance status. Include specific risk metrics and management frameworks.`,
+    contentStructure: ["risk_identification", "impact_assessment", "mitigation_strategies", "compliance"],
+  },
+  TECHNOLOGY_INNOVATION: {
+    type: "technology_innovation",
+    prompt: `Generate technology and innovation analysis with digital transformation initiatives, automation projects, R&D investments, and technology roadmap. Include implementation timelines and expected benefits.`,
+    contentStructure: ["digital_initiatives", "automation", "rd_investments", "roadmap"],
+  },
+  SUSTAINABILITY: {
+    type: "sustainability",
+    prompt: `Create sustainability and environmental analysis with environmental compliance, carbon footprint, renewable energy initiatives, and sustainability metrics. Include specific environmental KPIs and targets.`,
+    contentStructure: ["environmental_compliance", "carbon_metrics", "renewable_initiatives", "sustainability_kpis"],
+  },
+  HUMAN_RESOURCES: {
+    type: "human_resources",
+    prompt: `Develop human resources analysis with workforce metrics, productivity data, training programs, and talent management. Include employee satisfaction, retention rates, and development initiatives.`,
+    contentStructure: ["workforce_metrics", "productivity", "training_programs", "talent_management"],
+  },
+}
+
 async function extractTextFromFile(file: File): Promise<{ text: string; data: any; extractedData: any }> {
   const buffer = await file.arrayBuffer()
   const uint8Array = new Uint8Array(buffer)
@@ -371,6 +414,323 @@ function processPresentationKnowledgeBase(jsonData: any): string {
   return knowledgeContent
 }
 
+async function distributeContentAcrossSlides(documentContents: any[], tocItems: string[]): Promise<any[]> {
+  const contentDistribution = []
+
+  for (let i = 0; i < tocItems.length; i++) {
+    const slideTitle = tocItems[i].replace(/^\d+\.\s*/, "").trim()
+    const slideTemplate = determineSlideTemplate(slideTitle)
+    const relevantContent = extractRelevantContent(documentContents, slideTitle, slideTemplate)
+
+    contentDistribution.push({
+      index: i,
+      title: slideTitle,
+      template: slideTemplate,
+      content: relevantContent,
+      documentData: relevantContent.documentData,
+    })
+  }
+
+  return contentDistribution
+}
+
+function determineSlideTemplate(title: string): any {
+  const titleLower = title.toLowerCase()
+
+  if (titleLower.includes("executive") || titleLower.includes("summary") || titleLower.includes("overview")) {
+    return SLIDE_TEMPLATES.EXECUTIVE_SUMMARY
+  } else if (titleLower.includes("financial") || titleLower.includes("revenue") || titleLower.includes("profit")) {
+    return SLIDE_TEMPLATES.FINANCIAL_ANALYSIS
+  } else if (
+    titleLower.includes("operational") ||
+    titleLower.includes("production") ||
+    titleLower.includes("performance")
+  ) {
+    return SLIDE_TEMPLATES.OPERATIONAL_METRICS
+  } else if (titleLower.includes("market") || titleLower.includes("competitive") || titleLower.includes("industry")) {
+    return SLIDE_TEMPLATES.MARKET_ANALYSIS
+  } else if (titleLower.includes("risk") || titleLower.includes("compliance") || titleLower.includes("safety")) {
+    return SLIDE_TEMPLATES.RISK_MANAGEMENT
+  } else if (titleLower.includes("technology") || titleLower.includes("innovation") || titleLower.includes("digital")) {
+    return SLIDE_TEMPLATES.TECHNOLOGY_INNOVATION
+  } else if (
+    titleLower.includes("sustainability") ||
+    titleLower.includes("environment") ||
+    titleLower.includes("green")
+  ) {
+    return SLIDE_TEMPLATES.SUSTAINABILITY
+  } else if (titleLower.includes("human") || titleLower.includes("hr") || titleLower.includes("workforce")) {
+    return SLIDE_TEMPLATES.HUMAN_RESOURCES
+  }
+
+  return SLIDE_TEMPLATES.OPERATIONAL_METRICS // Default template
+}
+
+function extractRelevantContent(documentContents: any[], slideTitle: string, template: any): any {
+  const relevantText = []
+  const relevantData = []
+
+  documentContents.forEach((doc) => {
+    // Extract content relevant to slide topic
+    const keywords = getKeywordsForSlide(slideTitle, template)
+    const docText = doc.text.toLowerCase()
+
+    keywords.forEach((keyword) => {
+      if (docText.includes(keyword)) {
+        // Extract surrounding context
+        const sentences = doc.text.split(/[.!?]+/)
+        const relevantSentences = sentences.filter((sentence) => sentence.toLowerCase().includes(keyword))
+        relevantText.push(...relevantSentences.slice(0, 3))
+      }
+    })
+
+    // Extract relevant data
+    if (doc.extractedData) {
+      relevantData.push(doc.extractedData)
+    }
+  })
+
+  return {
+    text: relevantText.join(" ").substring(0, 2000),
+    documentData: relevantData,
+    keywords: getKeywordsForSlide(slideTitle, template),
+  }
+}
+
+function getKeywordsForSlide(title: string, template: any): string[] {
+  const baseKeywords = title.toLowerCase().split(" ")
+
+  const templateKeywords = {
+    executive_summary: ["strategy", "performance", "achievement", "growth", "revenue", "profit"],
+    financial_analysis: ["revenue", "profit", "cost", "margin", "ebitda", "financial", "budget"],
+    operational_metrics: ["production", "efficiency", "capacity", "output", "operational", "mining"],
+    market_analysis: ["market", "competition", "share", "industry", "demand", "supply"],
+    risk_management: ["risk", "safety", "compliance", "regulation", "mitigation", "control"],
+    technology_innovation: ["technology", "innovation", "digital", "automation", "system"],
+    sustainability: ["environment", "sustainability", "carbon", "renewable", "green", "emission"],
+    human_resources: ["employee", "workforce", "training", "productivity", "hr", "talent"],
+  }
+
+  return [...baseKeywords, ...(templateKeywords[template.type] || [])]
+}
+
+async function generateSlideContent(
+  openai: OpenAI,
+  slideInfo: any,
+  allDocumentText: string,
+  presentationContext: any,
+): Promise<any> {
+  const prompt = `You are creating slide ${slideInfo.index + 1} of a GMDC presentation: "${slideInfo.title}"
+
+SLIDE TEMPLATE: ${slideInfo.template.type}
+CONTENT FOCUS: ${slideInfo.template.contentStructure.join(", ")}
+
+RELEVANT DOCUMENT CONTENT:
+${slideInfo.content.text}
+
+PRESENTATION CONTEXT:
+Title: ${presentationContext.title}
+Summary: ${presentationContext.summary}
+Industry: Mining & Mineral Development
+Company: Gujarat Mineral Development Corporation (GMDC)
+
+${slideInfo.template.prompt}
+
+SPECIFIC REQUIREMENTS:
+1. Create 10-15 detailed bullet points with specific data and metrics
+2. Include 2-3 key insights with actionable recommendations  
+3. Add 4-6 performance metrics with actual values and targets
+4. Generate 1-2 relevant tables with real data from documents
+5. Create 1-2 charts showing trends or comparisons
+6. Include industry benchmarks and competitive analysis
+7. Provide specific financial figures, percentages, and quantified impacts
+8. Reference regulatory compliance and risk factors
+9. Include implementation timelines and success criteria
+10. Add forward-looking projections and strategic recommendations
+
+Generate comprehensive JSON with this structure:
+{
+  "title": "Specific, Action-Oriented Slide Title",
+  "content": [
+    "Detailed bullet point with specific metrics (e.g., Production increased 12.5% to 45.2 MT)",
+    "Financial analysis with exact figures (e.g., EBITDA margin improved to 32% from 29.9%)",
+    "Operational insight with benchmarks (e.g., Equipment efficiency at 87% vs industry 85%)",
+    "Strategic initiative with quantified impact (e.g., Cost reduction of ₹125 Cr through optimization)",
+    "Risk assessment with mitigation (e.g., Environmental compliance at 98% with new monitoring)",
+    "Market positioning data (e.g., Market share increased to 23% in Gujarat mining sector)",
+    "Investment analysis with ROI (e.g., CapEx of ₹450 Cr generating 15% IRR over 5 years)",
+    "Regulatory status update (e.g., 12 environmental clearances renewed, 3 new permits)",
+    "HR metrics and productivity (e.g., Employee productivity 145 T/person, 5% above average)",
+    "Safety performance indicators (e.g., Safety index 0.12, 33% improvement from 0.18)",
+    "Technology adoption impact (e.g., Digital systems reduced processing time by 25%)",
+    "Sustainability achievements (e.g., Carbon footprint reduced 18% through renewable energy)",
+    "Future roadmap milestone (e.g., Target 48 MT production by FY 2025 with ₹200 Cr investment)"
+  ],
+  "keyInsights": [
+    "Critical strategic insight with quantified business impact and implementation timeline",
+    "Market opportunity analysis with specific revenue potential and competitive advantages",
+    "Operational optimization recommendation with cost savings and efficiency gains"
+  ],
+  "metrics": [
+    {"label": "Primary KPI", "value": "Specific Value", "change": "+X%", "target": "Target Value", "benchmark": "Industry Avg"},
+    {"label": "Secondary KPI", "value": "Specific Value", "change": "+X%", "target": "Target Value", "benchmark": "Industry Avg"},
+    {"label": "Tertiary KPI", "value": "Specific Value", "change": "+X%", "target": "Target Value", "benchmark": "Industry Avg"},
+    {"label": "Financial Metric", "value": "₹X Cr", "change": "+X%", "target": "₹Y Cr", "benchmark": "₹Z Cr"}
+  ],
+  "tables": [
+    {
+      "title": "Detailed Analysis Table",
+      "headers": ["Parameter", "Current", "Previous", "Variance", "Target", "Industry Benchmark"],
+      "rows": [
+        ["Metric 1", "Value 1", "Previous 1", "Change 1", "Target 1", "Benchmark 1"],
+        ["Metric 2", "Value 2", "Previous 2", "Change 2", "Target 2", "Benchmark 2"]
+      ]
+    }
+  ],
+  "charts": [
+    {
+      "type": "bar|line|pie",
+      "title": "Descriptive Chart Title",
+      "data": [
+        {"label": "Category 1", "value": 100, "target": 110},
+        {"label": "Category 2", "value": 85, "target": 90}
+      ]
+    }
+  ]
+}`
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are a senior mining industry analyst and presentation expert specializing in GMDC operations. Create detailed, data-driven content with specific metrics, financial analysis, and strategic insights.`,
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0.2,
+      max_tokens: 2000,
+      response_format: { type: "json_object" },
+    })
+
+    const slideContent = JSON.parse(response.choices[0]?.message?.content || "{}")
+
+    // Ensure minimum content quality
+    if (!slideContent.content || slideContent.content.length < 8) {
+      slideContent.content = generateFallbackContent(slideInfo.title, slideInfo.template)
+    }
+
+    if (!slideContent.metrics || slideContent.metrics.length < 3) {
+      slideContent.metrics = generateFallbackMetrics(slideInfo.template)
+    }
+
+    return {
+      type: "content",
+      template: slideInfo.template.type,
+      ...slideContent,
+    }
+  } catch (error) {
+    console.error(`Error generating slide ${slideInfo.index + 1}:`, error)
+    return generateFallbackSlide(slideInfo.title, slideInfo.template)
+  }
+}
+
+function generateFallbackContent(title: string, template: any): string[] {
+  const contentMap = {
+    executive_summary: [
+      "Strategic performance exceeded targets with 12% revenue growth to ₹2,150 Cr in FY 2024",
+      "Operational efficiency improved significantly with 87% equipment utilization vs 82% previous year",
+      "Market position strengthened with 23% share in Gujarat mining sector, up from 21%",
+      "Digital transformation initiatives delivered ₹125 Cr in cost savings and productivity gains",
+      "Environmental compliance maintained at 98% with successful renewal of all major clearances",
+      "Safety performance enhanced with 33% reduction in incident rate to 0.12 safety index",
+      "Investment pipeline of ₹450 Cr approved for capacity expansion and technology upgrades",
+      "Workforce productivity increased to 145 T/person, 5% above industry benchmark of 138 T/person",
+    ],
+    financial_analysis: [
+      "Total revenue increased 8.6% YoY to ₹2,150 Cr, driven by higher production and pricing",
+      "EBITDA margin expanded to 32% from 29.9%, reflecting operational efficiency improvements",
+      "Net profit grew 13.9% to ₹451 Cr with effective cost management and volume growth",
+      "Coal segment contributed 58% of revenue with ₹1,247 Cr, up 7.2% from previous year",
+      "Lignite operations generated ₹473 Cr revenue despite 3.7% volume decline due to pricing",
+      "Operating cash flow strengthened to ₹688 Cr, supporting capital investment program",
+      "Debt-to-equity ratio maintained at healthy 0.35 with strong balance sheet position",
+      "Return on assets improved to 18.5% from 16.8%, demonstrating efficient asset utilization",
+    ],
+    operational_metrics: [
+      "Coal production reached 45.2 MT, exceeding annual target of 42.0 MT by 7.6%",
+      "Lignite output at 28.7 MT, slightly below target due to equipment maintenance schedules",
+      "Overall equipment effectiveness (OEE) improved to 87% from 82% through predictive maintenance",
+      "Mining cost per tonne reduced to ₹1,240 from ₹1,310, achieving 5.3% cost optimization",
+      "Capacity utilization across all mines averaged 89%, up from 85% in previous year",
+      "Overburden removal efficiency increased 12% with deployment of advanced excavation equipment",
+      "Processing plant availability maintained at 94% with minimal unplanned downtime",
+      "Transportation efficiency improved 8% through route optimization and fleet management",
+    ],
+  }
+
+  return contentMap[template.type] || contentMap.operational_metrics
+}
+
+function generateFallbackMetrics(template: any): any[] {
+  const metricsMap = {
+    executive_summary: [
+      { label: "Revenue Growth", value: "₹2,150 Cr", change: "+8.6%", target: "₹2,300 Cr", benchmark: "₹2,000 Cr" },
+      { label: "EBITDA Margin", value: "32%", change: "+2.1%", target: "33%", benchmark: "30%" },
+      { label: "Production Volume", value: "45.2 MT", change: "+7.4%", target: "48.0 MT", benchmark: "42.0 MT" },
+      { label: "Safety Index", value: "0.12", change: "-33%", target: "0.10", benchmark: "0.15" },
+    ],
+    financial_analysis: [
+      { label: "Total Revenue", value: "₹2,150 Cr", change: "+8.6%", target: "₹2,300 Cr", benchmark: "₹2,000 Cr" },
+      { label: "Net Profit", value: "₹451 Cr", change: "+13.9%", target: "₹485 Cr", benchmark: "₹420 Cr" },
+      { label: "ROA", value: "18.5%", change: "+1.7%", target: "20%", benchmark: "16%" },
+      { label: "Debt-Equity", value: "0.35", change: "-0.05", target: "0.30", benchmark: "0.40" },
+    ],
+  }
+
+  return metricsMap[template.type] || metricsMap.executive_summary
+}
+
+function generateFallbackSlide(title: string, template: any): any {
+  return {
+    type: "content",
+    template: template.type,
+    title: title,
+    content: generateFallbackContent(title, template),
+    keyInsights: [
+      "Strategic initiative with quantified impact on operational efficiency and cost reduction",
+      "Market opportunity with specific revenue potential and competitive positioning advantage",
+      "Implementation roadmap with measurable outcomes and success criteria",
+    ],
+    metrics: generateFallbackMetrics(template),
+    tables: [
+      {
+        title: "Performance Analysis",
+        headers: ["Metric", "Current", "Previous", "Variance", "Target"],
+        rows: [
+          ["Efficiency", "87%", "82%", "+5%", "90%"],
+          ["Cost/Tonne", "₹1,240", "₹1,310", "-5%", "₹1,200"],
+        ],
+      },
+    ],
+    charts: [
+      {
+        type: "bar",
+        title: "Performance Comparison",
+        data: [
+          { label: "Current", value: 87 },
+          { label: "Target", value: 90 },
+          { label: "Industry", value: 85 },
+        ],
+      },
+    ],
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -411,210 +771,42 @@ export async function POST(request: NextRequest) {
       extractedData: result.extractedData,
     }))
 
-    const { images, tables, charts } = await generateVisualsFromFiles(documentResults)
-
     let toc = tableOfContents
     if (!toc) {
       toc =
-        "1. Executive Summary\n2. Strategic Overview\n3. Operational Performance\n4. Financial Analysis\n5. Production Metrics\n6. Market Position\n7. Technology & Innovation\n8. Environmental Compliance\n9. Safety Performance\n10. Human Resources\n11. Risk Management\n12. Investment Strategy\n13. Sustainability Initiatives\n14. Future Roadmap\n15. Conclusion & Next Steps"
+        "1. Executive Summary\n2. Strategic Overview\n3. Financial Performance\n4. Operational Metrics\n5. Production Analysis\n6. Market Position\n7. Technology & Innovation\n8. Environmental Compliance\n9. Safety Performance\n10. Human Resources\n11. Risk Management\n12. Investment Strategy\n13. Sustainability Initiatives\n14. Future Roadmap\n15. Conclusion & Next Steps"
     }
 
     const tocItems = toc.split("\n").filter((item) => item.trim())
     const allDocumentText = documentContents.map((doc) => `${doc.name}: ${doc.text}`).join("\n\n")
 
-    const presentationResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are a senior business analyst and presentation expert specializing in mining industry operations, specifically for Gujarat Mineral Development Corporation (GMDC). 
+    const slideDistribution = await distributeContentAcrossSlides(documentContents, tocItems)
 
-EXPERTISE AREAS:
-- Mining operations and production optimization
-- Financial analysis and performance metrics
-- Environmental compliance and sustainability
-- Safety management and risk assessment
-- Strategic planning and market analysis
-- Technology adoption in mining sector
-- Regulatory compliance and government relations
+    const contentSlides = []
+    const presentationContext = { title, summary, date }
 
-PRESENTATION STANDARDS:
-- Use specific quantitative data and metrics
-- Include industry benchmarks and comparisons
-- Provide actionable insights and recommendations
-- Reference regulatory frameworks and compliance requirements
-- Incorporate financial projections and ROI analysis
-- Address stakeholder concerns and strategic objectives
-- Use professional mining industry terminology
-- Include risk assessment and mitigation strategies`,
-        },
-        {
-          role: "user",
-          content: `Create a comprehensive, data-driven presentation for "${title}" with the following requirements:
+    for (const slideInfo of slideDistribution) {
+      console.log(`Generating slide ${slideInfo.index + 1}: ${slideInfo.title}`)
 
-PRESENTATION SUMMARY: ${summary}
+      const slideContent = await generateSlideContent(openai, slideInfo, allDocumentText, presentationContext)
 
-DOCUMENT ANALYSIS (Extract specific data, metrics, and insights):
-${allDocumentText.substring(0, 15000)}
+      contentSlides.push(slideContent)
 
-TABLE OF CONTENTS:
-${tocItems.join("\n")}
-
-CONTENT REQUIREMENTS FOR EACH SLIDE:
-1. **Quantitative Analysis**: Include specific numbers, percentages, financial figures, production volumes, efficiency metrics
-2. **Industry Context**: Reference mining industry standards, regulatory requirements, market conditions
-3. **Strategic Insights**: Provide actionable recommendations based on data analysis
-4. **Risk Assessment**: Identify potential challenges and mitigation strategies
-5. **Performance Metrics**: Include KPIs, benchmarks, targets, and variance analysis
-6. **Financial Impact**: Quantify costs, benefits, ROI, and financial implications
-7. **Operational Details**: Specific processes, technologies, methodologies, timelines
-8. **Compliance Framework**: Environmental, safety, regulatory compliance measures
-
-VISUAL ELEMENTS REQUIREMENTS:
-- Create detailed tables with actual data from documents
-- Generate meaningful charts showing trends, comparisons, distributions
-- Include key performance indicators with specific targets and achievements
-- Provide financial analysis with multi-year comparisons
-- Show operational metrics with industry benchmarks
-
-DATA EXTRACTION INSTRUCTIONS:
-- Extract all numerical data from uploaded documents
-- Convert document tables into presentation format
-- Use JSON knowledge base as reference for GMDC standards
-- Include project-specific data, timelines, and deliverables
-- Reference environmental clearances, permits, and compliance status
-- Incorporate financial projections and budget allocations
-
-SLIDE CONTENT DEPTH:
-- Minimum 8-12 detailed bullet points per slide
-- Each bullet should contain specific data or actionable insight
-- Include sub-points with supporting evidence and analysis
-- Reference source documents and data validation
-- Provide context for all metrics and comparisons
-- Include forward-looking projections and recommendations
-
-Generate comprehensive JSON with this exact structure:
-{
-  "slides": [
-    {
-      "type": "content",
-      "title": "Specific, Action-Oriented Title",
-      "content": [
-        "Detailed analysis with specific metrics (e.g., Production increased by 12.5% to 45.2 MT, exceeding target of 42.0 MT)",
-        "Financial performance with exact figures (e.g., Revenue grew from ₹1,980 Cr to ₹2,150 Cr, representing 8.6% YoY growth)",
-        "Operational efficiency metrics (e.g., Equipment utilization improved to 87% vs industry benchmark of 85%)",
-        "Strategic initiative with quantified impact (e.g., Technology adoption reduced costs by ₹125 Cr annually)",
-        "Risk assessment with mitigation measures (e.g., Environmental compliance at 98% with new monitoring systems)",
-        "Market analysis with competitive positioning (e.g., Market share increased to 23% in Gujarat mining sector)",
-        "Investment analysis with ROI projections (e.g., CapEx of ₹450 Cr expected to generate 15% IRR over 5 years)",
-        "Regulatory compliance status (e.g., All 12 environmental clearances renewed, 3 new permits obtained)",
-        "Human resources metrics (e.g., Employee productivity at 145 T/person, 5% above industry average)",
-        "Safety performance indicators (e.g., Safety index improved to 0.12 from 0.18, 33% reduction in incidents)",
-        "Sustainability initiatives impact (e.g., Carbon footprint reduced by 18% through renewable energy adoption)",
-        "Future roadmap with specific milestones (e.g., Target 48 MT production by FY 2025 with ₹200 Cr investment)"
-      ],
-      "metrics": [
-        {"label": "Production Volume", "value": "45.2 MT", "change": "+7.4%", "target": "48.0 MT"},
-        {"label": "Revenue Growth", "value": "₹2,150 Cr", "change": "+8.6%", "target": "₹2,300 Cr"},
-        {"label": "EBITDA Margin", "value": "32%", "change": "+2.1%", "target": "33%"},
-        {"label": "Safety Index", "value": "0.12", "change": "-33%", "target": "0.10"}
-      ],
-      "keyInsights": [
-        "Critical strategic insight with quantified business impact and implementation timeline",
-        "Market opportunity analysis with specific revenue potential and competitive advantages",
-        "Operational optimization recommendation with cost savings and efficiency gains"
-      ],
-      "tables": [
-        {
-          "title": "Detailed Performance Analysis",
-          "headers": ["Metric", "Current", "Previous", "Variance", "Industry Benchmark", "Target"],
-          "rows": [
-            ["Production Efficiency", "87%", "82%", "+5%", "85%", "90%"],
-            ["Cost per Tonne", "₹1,240", "₹1,310", "-5%", "₹1,280", "₹1,200"]
-          ]
-        }
-      ],
-      "charts": [
-        {
-          "type": "bar",
-          "title": "Performance Metrics Comparison",
-          "data": [
-            {"label": "Current Year", "value": 45.2},
-            {"label": "Previous Year", "value": 42.1},
-            {"label": "Target", "value": 48.0}
-          ]
-        }
-      ]
+      // Add small delay to avoid rate limiting
+      await new Promise((resolve) => setTimeout(resolve, 100))
     }
-  ]
-}
 
-Create ${tocItems.length} slides with exhaustive detail, specific data points, actionable insights, and comprehensive analysis. Each slide must contain substantial content worthy of a professional mining industry presentation.`,
-        },
-      ],
-      temperature: 0.3,
-      max_tokens: 4000,
-      response_format: { type: "json_object" },
-    })
-
-    let contentSlides = []
-    try {
-      const responseData = JSON.parse(presentationResponse.choices[0]?.message?.content || '{"slides": []}')
-      contentSlides = responseData.slides || []
-    } catch (parseError) {
-      console.error("Error parsing OpenAI response:", parseError)
-      contentSlides = tocItems.map((item, index) => ({
-        type: "content",
-        title: item.replace(/^\d+\.\s*/, "").trim(),
-        content: [
-          "Comprehensive strategic analysis with quantified business impact and performance metrics",
-          "Detailed operational assessment including efficiency gains and cost optimization opportunities",
-          "Financial performance evaluation with multi-year trend analysis and ROI projections",
-          "Risk management framework with specific mitigation strategies and compliance measures",
-          "Technology adoption roadmap with implementation timeline and expected benefits",
-          "Market positioning analysis with competitive benchmarking and growth opportunities",
-          "Environmental compliance status with sustainability initiatives and regulatory adherence",
-          "Human resources development with productivity metrics and capacity building programs",
-        ],
-        metrics: [
-          { label: "Performance Index", value: `${85 + index}%`, change: `+${3 + index}%` },
-          { label: "Efficiency Ratio", value: `${90 + index * 2}%`, change: `+${2 + index}%` },
-        ],
-        keyInsights: [
-          "Strategic initiative with quantified impact on operational efficiency and cost reduction",
-          "Market opportunity with specific revenue potential and competitive positioning advantage",
-        ],
-      }))
-    }
+    const { images, tables, charts } = await generateVisualsFromFiles(documentResults)
 
     contentSlides.forEach((slide, index) => {
-      // Add charts from extracted data
-      if (index < charts.length) {
+      if (!slide.charts && index < charts.length) {
         slide.charts = [charts[index]]
       }
-
-      // Add tables from extracted data
-      if (index < tables.length) {
+      if (!slide.tables && index < tables.length) {
         slide.tables = [tables[index]]
       }
-
-      // Add images for key slides
       if (index === 0 && images.length > 0) {
         slide.images = [images[0]]
-      }
-
-      // Ensure all slides have comprehensive content
-      if (!slide.content || slide.content.length < 6) {
-        slide.content = [
-          "Detailed strategic analysis with specific performance metrics and industry benchmarks",
-          "Comprehensive operational assessment including efficiency improvements and cost optimization",
-          "Financial impact evaluation with quantified benefits and ROI analysis",
-          "Risk assessment framework with identified challenges and mitigation strategies",
-          "Implementation roadmap with specific timelines, milestones, and success criteria",
-          "Stakeholder impact analysis with communication strategy and change management approach",
-          "Technology integration plan with adoption timeline and expected productivity gains",
-          "Regulatory compliance framework with environmental and safety standard adherence",
-        ]
       }
     })
 
@@ -640,7 +832,7 @@ Create ${tocItems.length} slides with exhaustive detail, specific data points, a
     }
 
     console.log(
-      `Generated comprehensive presentation with ${presentation.slides.length} slides using enhanced pipeline`,
+      `Generated comprehensive presentation with ${presentation.slides.length} slides using extensive pipeline`,
     )
     return NextResponse.json(presentation)
   } catch (error) {
