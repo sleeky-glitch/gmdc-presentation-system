@@ -136,7 +136,7 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
           backgroundRepeat: "no-repeat",
         }}
       >
-        <div className="text-center">
+        <div className="text-center" style={{ marginTop: "120px" }}>
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-amber-700 mb-2">{slide.title}</h1>
             <div className="w-64 h-1 bg-amber-600 mx-auto mb-4"></div>
