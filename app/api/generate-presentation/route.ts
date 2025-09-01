@@ -7,13 +7,53 @@ async function extractTextFromFile(file: File): Promise<{ text: string; data: an
   const textDecoder = new TextDecoder("utf-8")
 
   try {
-    if (file.type === "application/pdf") {
+    if (file.type === "application/json" || file.name.endsWith(".json")) {
+      const jsonText = textDecoder.decode(uint8Array)
+      try {
+        const jsonData = JSON.parse(jsonText)
+
+        if (jsonData.slides && Array.isArray(jsonData.slides)) {
+          // Process presentation knowledge base format
+          const knowledgeContent = processPresentationKnowledgeBase(jsonData)
+          return {
+            text: knowledgeContent,
+            data: {
+              isPresentationKnowledgeBase: true,
+              slideCount: jsonData.slides.length,
+              hasStructuredData: true,
+              hasCharts: true,
+              hasTables: jsonData.slides.some((slide: any) => slide.tables && slide.tables.length > 0),
+              fileSize: uint8Array.length,
+              jsonKeys: Object.keys(jsonData),
+            },
+          }
+        } else {
+          // Process generic JSON format
+          const jsonContent = JSON.stringify(jsonData, null, 2)
+          return {
+            text: `JSON Data from ${file.name}:\n${jsonContent}`,
+            data: {
+              isStructuredData: true,
+              hasCharts: Array.isArray(jsonData) || (typeof jsonData === "object" && jsonData !== null),
+              fileSize: uint8Array.length,
+              jsonKeys: typeof jsonData === "object" ? Object.keys(jsonData) : [],
+            },
+          }
+        }
+      } catch (jsonError) {
+        console.error(`Error parsing JSON file ${file.name}:`, jsonError)
+        return {
+          text: `JSON file ${file.name} (parsing error - treating as text):\n${jsonText.substring(0, 3000)}`,
+          data: { fileSize: uint8Array.length, hasParsingError: true },
+        }
+      }
+    } else if (file.type === "application/pdf") {
       const pdfText = textDecoder.decode(uint8Array)
       const extractedText = pdfText
         .replace(/[^\w\s\d.,%-]/g, " ")
         .replace(/\s+/g, " ")
         .trim()
-        .substring(0, 3000) // Limit text size for performance
+        .substring(0, 3000)
 
       return {
         text: extractedText || `PDF Content from ${file.name}`,
@@ -98,6 +138,48 @@ async function generateVisualsFromFiles(files: File[]) {
   return { images, tables, charts }
 }
 
+function processPresentationKnowledgeBase(jsonData: any): string {
+  let knowledgeContent = `PRESENTATION KNOWLEDGE BASE: ${jsonData.file_name || "Unknown"}\n\n`
+
+  if (jsonData.slides && Array.isArray(jsonData.slides)) {
+    jsonData.slides.forEach((slide: any, index: number) => {
+      knowledgeContent += `SLIDE ${slide.slide_index || index + 1}: ${slide.title || "Untitled"}\n`
+
+      // Process slide content
+      if (slide.content && Array.isArray(slide.content)) {
+        slide.content.forEach((contentItem: any) => {
+          if (contentItem.type === "text") {
+            knowledgeContent += `- ${contentItem.text}\n`
+          } else if (contentItem.type === "bullets" && contentItem.items) {
+            contentItem.items.forEach((bullet: string) => {
+              knowledgeContent += `  • ${bullet}\n`
+            })
+          }
+        })
+      }
+
+      // Process tables
+      if (slide.tables && Array.isArray(slide.tables)) {
+        slide.tables.forEach((table: any) => {
+          knowledgeContent += `\nTABLE: ${table.title || "Data Table"}\n`
+          if (table.columns) {
+            knowledgeContent += `Columns: ${table.columns.join(" | ")}\n`
+          }
+          if (table.rows && Array.isArray(table.rows)) {
+            table.rows.forEach((row: any[]) => {
+              knowledgeContent += `${row.join(" | ")}\n`
+            })
+          }
+        })
+      }
+
+      knowledgeContent += "\n---\n\n"
+    })
+  }
+
+  return knowledgeContent
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -155,17 +237,31 @@ export async function POST(request: NextRequest) {
         {
           role: "system",
           content:
-            "Create comprehensive GMDC presentation content. Respond with ONLY valid JSON containing all slides.",
+            "Create comprehensive GMDC presentation content. Use presentation knowledge base JSON data as reference material for context, examples, and best practices. Extract relevant information from knowledge base to enhance new presentation quality.",
         },
         {
           role: "user",
           content: `Create complete presentation for "${title}" with summary: ${summary}
 
-DOCUMENT CONTENT:
-${allDocumentText.substring(0, 8000)}
+DOCUMENT CONTENT (including presentation knowledge base):
+${allDocumentText.substring(0, 12000)}
 
 TABLE OF CONTENTS:
 ${tocItems.join("\n")}
+
+KNOWLEDGE BASE INSTRUCTIONS:
+- Use presentation knowledge base as reference for GMDC presentation standards
+- Extract relevant project data, compliance information, and status updates
+- Incorporate similar table structures and data presentation formats
+- Reference environmental clearances, project timelines, and regulatory processes
+- Use knowledge base examples for professional formatting and content depth
+
+SPECIAL INSTRUCTIONS FOR JSON DATA:
+- Extract numerical data from JSON files for charts and metrics
+- Use JSON structure to create meaningful visualizations
+- Convert JSON arrays into tables where appropriate
+- Highlight key insights from structured JSON data
+- Reference knowledge base examples for table formatting and data presentation
 
 Generate JSON with this structure:
 {
@@ -174,24 +270,31 @@ Generate JSON with this structure:
       "type": "content",
       "title": "Slide Title",
       "content": [
-        "Detailed bullet with specific metrics",
-        "Analysis with quantified impact",
-        "Strategic insight with implementation",
-        "Performance benchmarks and targets",
-        "Risk assessment with mitigation",
-        "Technology adoption initiatives",
-        "Environmental compliance measures",
-        "Financial implications and ROI"
+        "Detailed bullet with specific metrics from JSON data and knowledge base examples",
+        "Analysis with quantified impact referencing similar projects from knowledge base",
+        "Strategic insight with implementation based on JSON insights and KB best practices",
+        "Performance benchmarks and targets from data files and reference standards",
+        "Risk assessment with mitigation strategies from document analysis and KB examples",
+        "Technology adoption initiatives from uploaded content and reference implementations",
+        "Environmental compliance measures following KB regulatory framework examples",
+        "Financial implications and ROI from JSON metrics with KB comparative analysis"
       ],
       "metrics": [
-        {"label": "Key Metric", "value": "Value", "change": "+X%"}
+        {"label": "Key Metric from JSON/KB", "value": "Value", "change": "+X%"}
       ],
-      "keyInsights": ["Critical insight based on analysis"]
+      "keyInsights": ["Critical insight based on JSON, document analysis, and knowledge base references"],
+      "tables": [
+        {
+          "title": "Data Table (format from KB)",
+          "headers": ["Column1", "Column2", "Column3"],
+          "rows": [["Data1", "Data2", "Data3"]]
+        }
+      ]
     }
   ]
 }
 
-Create ${tocItems.length} comprehensive content slides with exhaustive detail, specific data points, and actionable insights.`,
+Create ${tocItems.length} comprehensive content slides with exhaustive detail, specific data points from JSON files, knowledge base references, and actionable insights.`,
         },
       ],
       temperature: 0.7,
@@ -205,7 +308,6 @@ Create ${tocItems.length} comprehensive content slides with exhaustive detail, s
       contentSlides = responseData.slides || []
     } catch (parseError) {
       console.error("Error parsing OpenAI response:", parseError)
-      // Fallback slides
       contentSlides = tocItems.map((item) => ({
         type: "content",
         title: item.replace(/^\d+\.\s*/, "").trim(),

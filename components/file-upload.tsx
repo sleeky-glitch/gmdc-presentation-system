@@ -39,6 +39,7 @@ export function FileUpload({ onFilesUploaded }: FileUploadProps) {
         "application/pdf",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
         "application/msword", // .doc
+        "application/json", // Added JSON file support
       ]
 
       if (!validTypes.includes(file.type)) {
@@ -84,6 +85,9 @@ export function FileUpload({ onFilesUploaded }: FileUploadProps) {
     if (file.type.includes("word")) {
       return <FileText className="h-4 w-4 text-blue-600" />
     }
+    if (file.type.includes("json")) {
+      return <File className="h-4 w-4 text-orange-600" />
+    }
     return <File className="h-4 w-4 text-gray-600" />
   }
 
@@ -106,12 +110,12 @@ export function FileUpload({ onFilesUploaded }: FileUploadProps) {
             Drop files here or click to upload
           </p>
           <p className="text-sm text-gray-500 mb-4">
-            Supports Excel (.xlsx, .xls), PDF, and Word (.docx, .doc) files up to 10MB
+            Supports Excel (.xlsx, .xls), PDF, Word (.docx, .doc), and JSON files up to 10MB
           </p>
           <input
             type="file"
             multiple
-            accept=".xlsx,.xls,.pdf,.docx,.doc"
+            accept=".xlsx,.xls,.pdf,.docx,.doc,.json" // Added .json to accepted file types
             onChange={handleFileInput}
             className="hidden"
             id="file-upload"
