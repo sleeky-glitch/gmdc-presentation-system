@@ -136,13 +136,11 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
           backgroundRepeat: "no-repeat",
         }}
       >
-        <div className="text-center" style={{ marginTop: "120px" }}>
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-amber-700 mb-2">{slide.title}</h1>
-            <div className="w-64 h-1 bg-amber-600 mx-auto mb-4"></div>
-            {slide.date && <p className="text-lg text-gray-600 mt-4">{slide.date}</p>}
-            {slide.subtitle && <p className="text-xl text-gray-700 mt-2">{slide.subtitle}</p>}
-          </div>
+        <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2 text-center">
+          <h1 className="text-4xl font-bold text-amber-700 mb-2">{slide.title}</h1>
+          <div className="w-64 h-1 bg-amber-600 mx-auto mb-4"></div>
+          {slide.date && <p className="text-lg text-gray-600 mt-4">{slide.date}</p>}
+          {slide.subtitle && <p className="text-xl text-gray-700 mt-2">{slide.subtitle}</p>}
         </div>
 
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-gray-700 font-semibold tracking-wider">
