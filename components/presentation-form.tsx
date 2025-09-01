@@ -99,265 +99,32 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
     }
 
     try {
-      console.log("[v0] Generating PowerPoint presentation...")
-
-      const { default: PptxGenJS } = await import("pptxgenjs")
-
-      // Check if we're in browser environment
-      if (typeof window === "undefined") {
-        throw new Error("PowerPoint generation must run in browser environment")
-      }
-
-      const pptx = new PptxGenJS()
-
-      // Set presentation properties
-      pptx.author = "GMDC"
-      pptx.company = "Gujarat Mineral Development Corporation Ltd"
-      pptx.title = formData.title || "GMDC Presentation"
-      pptx.subject = formData.summary || "GMDC Presentation"
-
-      // Standard presentation dimensions (16:9)
-      pptx.defineLayout({ name: "GMDC_LAYOUT", width: 13.33, height: 7.5 })
-      pptx.layout = "GMDC_LAYOUT"
-
-      // Title Slide
-      const titleSlide = pptx.addSlide()
-      titleSlide.background = {
-        path: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Main%20Slide.jpg-zFK4QxoegV9krsPbigcwKDu936VkkA.jpeg",
-      }
-
-      titleSlide.addText(formData.title || "Presentation Title", {
-        x: 1,
-        y: 4.5,
-        w: 11.33,
-        h: 1.5,
-        fontSize: 36,
-        bold: true,
-        color: "8B4513",
-        align: "center",
-        fontFace: "Arial",
-      })
-
-      if (formData.date) {
-        titleSlide.addText(formData.date, {
-          x: 1,
-          y: 6,
-          w: 11.33,
-          h: 0.5,
-          fontSize: 18,
-          color: "666666",
-          align: "center",
-          fontFace: "Arial",
-        })
-      }
-
-      titleSlide.addText("www.gmdcltd.com", {
-        x: 1,
-        y: 7,
-        w: 11.33,
-        h: 0.3,
-        fontSize: 14,
-        color: "666666",
-        align: "center",
-        fontFace: "Arial",
-      })
-
-      // Table of Contents Slide
-      if (generatedPresentation.tableOfContents) {
-        const tocSlide = pptx.addSlide()
-        tocSlide.background = {
-          path: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-KKzuc0o3AdSKVw2TJMYYwRhJi9QsGD.png",
-        }
-
-        tocSlide.addImage({
-          path: "https://www.gmdcltd.com/assets/img/logo.jpg",
-          x: 0.5,
-          y: 0.3,
-          w: 1.5,
-          h: 0.8,
-        })
-
-        tocSlide.addText("www.gmdcltd.com", {
-          x: 10.5,
-          y: 0.3,
-          w: 2.5,
-          h: 0.3,
-          fontSize: 14,
-          color: "666666",
-          fontFace: "Arial",
-        })
-
-        tocSlide.addText("Table of Content", {
-          x: 1,
-          y: 1.5,
-          w: 11.33,
-          h: 0.8,
-          fontSize: 28,
-          bold: true,
-          color: "333333",
-          fontFace: "Arial",
-        })
-
-        const tocItems = generatedPresentation.tableOfContents
-          .split("\n")
-          .filter((item: string) => item.trim())
-          .map((item: string, index: number) => `${index + 1}. ${item.trim()}`)
-          .join("\n")
-
-        tocSlide.addText(tocItems, {
-          x: 1,
-          y: 2.5,
-          w: 11.33,
-          h: 4,
-          fontSize: 16,
-          color: "333333",
-          fontFace: "Arial",
-          bullet: true,
-        })
-
-        tocSlide.addText("2", {
-          x: 12.5,
-          y: 7,
-          w: 0.5,
-          h: 0.3,
-          fontSize: 12,
-          color: "666666",
-          fontFace: "Arial",
-        })
-      }
-
-      // Content Slides
-      const slides = generatedPresentation.slides || []
-      slides.forEach((slide: any, index: number) => {
-        const contentSlide = pptx.addSlide()
-        contentSlide.background = {
-          path: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-KKzuc0o3AdSKVw2TJMYYwRhJi9QsGD.png",
-        }
-
-        // Header with logo and website
-        contentSlide.addImage({
-          path: "https://www.gmdcltd.com/assets/img/logo.jpg",
-          x: 0.5,
-          y: 0.3,
-          w: 1.5,
-          h: 0.8,
-        })
-
-        contentSlide.addText("www.gmdcltd.com", {
-          x: 10.5,
-          y: 0.3,
-          w: 2.5,
-          h: 0.3,
-          fontSize: 14,
-          color: "666666",
-          fontFace: "Arial",
-        })
-
-        // Slide title
-        contentSlide.addText(slide.title || `Slide ${index + 1}`, {
-          x: 1,
-          y: 1.5,
-          w: 11.33,
-          h: 0.8,
-          fontSize: 28,
-          bold: true,
-          color: "333333",
-          fontFace: "Arial",
-        })
-
-        // Content - extract text from HTML
-        const tempDiv = document.createElement("div")
-        tempDiv.innerHTML = slide.content || ""
-        const plainText = tempDiv.textContent || tempDiv.innerText || ""
-
-        contentSlide.addText(plainText, {
-          x: 1,
-          y: 2.5,
-          w: 11.33,
-          h: 4,
-          fontSize: 16,
-          color: "333333",
-          fontFace: "Arial",
-          bullet: true,
-        })
-
-        // Slide number
-        const slideNumber = index + (generatedPresentation.tableOfContents ? 3 : 2)
-        contentSlide.addText(slideNumber.toString(), {
-          x: 12.5,
-          y: 7,
-          w: 0.5,
-          h: 0.3,
-          fontSize: 12,
-          color: "666666",
-          fontFace: "Arial",
-        })
-      })
-
-      // Thank You Slide
-      const thankYouSlide = pptx.addSlide()
-      thankYouSlide.background = {
-        path: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Main%20Slide.jpg-zFK4QxoegV9krsPbigcwKDu936VkkA.jpeg",
-      }
-
-      thankYouSlide.addText("THANK YOU", {
-        x: 1,
-        y: 3.5,
-        w: 11.33,
-        h: 1.5,
-        fontSize: 48,
-        bold: true,
-        color: "8B4513",
-        align: "center",
-        fontFace: "Arial",
-      })
-
-      const finalSlideNumber = slides.length + (generatedPresentation.tableOfContents ? 3 : 2)
-      thankYouSlide.addText(finalSlideNumber.toString(), {
-        x: 12.5,
-        y: 7,
-        w: 0.5,
-        h: 0.3,
-        fontSize: 12,
-        color: "666666",
-        fontFace: "Arial",
-      })
-
-      // Generate and download PowerPoint file
-      const fileName = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.pptx`
-      await pptx.writeFile({ fileName })
-
-      toast({
-        title: "PowerPoint Generated!",
-        description: "Your presentation has been downloaded as a PowerPoint file",
-      })
-    } catch (error) {
-      console.error("[v0] PowerPoint generation error:", error)
-
-      console.log("[v0] Falling back to HTML download...")
-      try {
-        const htmlContent = generatePresentationHTML(generatedPresentation, formData)
-        const dataBlob = new Blob([htmlContent], { type: "text/html" })
-        const url = URL.createObjectURL(dataBlob)
-        const link = document.createElement("a")
-        link.href = url
-        link.download = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.html`
-        document.body.appendChild(link)
-        link.click()
+      console.log("[v0] Generating HTML presentation...")
+      const htmlContent = generatePresentationHTML(generatedPresentation, formData)
+      const dataBlob = new Blob([htmlContent], { type: "text/html" })
+      const url = URL.createObjectURL(dataBlob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.html`
+      link.style.display = "none"
+      document.body.appendChild(link)
+      link.click()
+      setTimeout(() => {
         document.body.removeChild(link)
         URL.revokeObjectURL(url)
+      }, 100)
 
-        toast({
-          title: "HTML Presentation Downloaded",
-          description: "PowerPoint generation failed, but HTML version has been downloaded",
-        })
-      } catch (fallbackError) {
-        toast({
-          title: "Export Failed",
-          description: `Error generating presentation: ${error instanceof Error ? error.message : "Unknown error"}`,
-          variant: "destructive",
-        })
-      }
+      toast({
+        title: "Presentation Downloaded!",
+        description: "Your presentation has been downloaded as an HTML file",
+      })
+    } catch (error) {
+      console.error("[v0] HTML generation error:", error)
+      toast({
+        title: "Export Failed",
+        description: `Error generating presentation: ${error instanceof Error ? error.message : "Unknown error"}`,
+        variant: "destructive",
+      })
     }
   }
 
@@ -506,7 +273,7 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
                 className="flex-1 h-12 border-green-600 text-green-600 hover:bg-green-50 bg-transparent"
               >
                 <Download className="mr-2 h-5 w-5" />
-                Export PowerPoint
+                Export HTML
               </Button>
               <Button
                 onClick={handleTextExport}
