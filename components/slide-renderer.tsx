@@ -236,26 +236,61 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
         {slide.subtitle && <h3 className="text-lg text-gray-700 mb-4 break-words">{slide.subtitle}</h3>}
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-6 pr-2">
+      <div className="flex-1 overflow-hidden">
         {slide.content && (
-          <div className="text-gray-800">
+          <div className="text-gray-800 h-full">
             {Array.isArray(slide.content) ? (
-              <ul className="space-y-2">
-                {slide.content.map((item: string, index: number) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-blue-600 mr-2 flex-shrink-0">➢</span>
-                    <span className="break-words text-sm leading-relaxed">{item}</span>
-                  </li>
-                ))}
-              </ul>
+              slide.content.length > 8 ? (
+                <div className="grid grid-cols-2 gap-6 h-full">
+                  <div className="space-y-2 overflow-y-auto pr-2">
+                    <ul className="space-y-2">
+                      {slide.content
+                        .slice(0, Math.ceil(slide.content.length / 2))
+                        .map((item: string, index: number) => (
+                          <li key={index} className="flex items-start">
+                            <span className="text-blue-600 mr-2 flex-shrink-0">➢</span>
+                            <span className="break-words text-sm leading-relaxed">{item}</span>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                  <div className="space-y-2 overflow-y-auto pr-2">
+                    <ul className="space-y-2">
+                      {slide.content.slice(Math.ceil(slide.content.length / 2)).map((item: string, index: number) => (
+                        <li key={index + Math.ceil(slide.content.length / 2)} className="flex items-start">
+                          <span className="text-blue-600 mr-2 flex-shrink-0">➢</span>
+                          <span className="break-words text-sm leading-relaxed">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ) : (
+                <div className="overflow-y-auto h-full pr-2">
+                  <ul className="space-y-2">
+                    {slide.content.map((item: string, index: number) => (
+                      <li key={index} className="flex items-start">
+                        <span className="text-blue-600 mr-2 flex-shrink-0">➢</span>
+                        <span className="break-words text-sm leading-relaxed">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
             ) : (
-              <p className="break-words text-sm leading-relaxed">{slide.content}</p>
+              <div className="overflow-y-auto h-full pr-2">
+                <p className="break-words text-sm leading-relaxed">{slide.content}</p>
+              </div>
             )}
           </div>
         )}
 
-        {slide.chart && <div className="max-h-80">{renderChart(slide.chart)}</div>}
-        {slide.table && renderTable(slide.table)}
+        {(slide.chart || slide.table) && (
+          <div className="mt-6 space-y-4">
+            {slide.chart && <div className="max-h-64">{renderChart(slide.chart)}</div>}
+            {slide.table && <div className="max-h-48">{renderTable(slide.table)}</div>}
+          </div>
+        )}
       </div>
 
       <div className="absolute bottom-4 right-4 text-sm text-gray-700">{slideNumber}</div>
