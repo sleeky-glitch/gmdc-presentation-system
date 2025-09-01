@@ -101,132 +101,40 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
     try {
       console.log("[v0] Generating PowerPoint presentation...")
 
-      // Dynamic import to avoid SSR issues
-      const PptxGenJS = (await import("pptxgenjs")).default
-      const pres = new PptxGenJS()
-
-      // Set presentation dimensions to 16:9 widescreen format
-      pres.layout = "LAYOUT_WIDE"
-
-      const slides = generatedPresentation.slides || []
-
-      // Title slide
-      const titleSlide = pres.addSlide()
-      titleSlide.background = {
-        path: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Main%20Slide.jpg-zFK4QxoegV9krsPbigcwKDu936VkkA.jpeg",
-      }
-
-      titleSlide.addText(formData.title || "Presentation Title", {
-        x: 1,
-        y: 4,
-        w: 8,
-        h: 1.5,
-        fontSize: 36,
-        bold: true,
-        color: "8B4513",
-        align: "center",
+      const response = await fetch("/api/export-powerpoint", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          presentation: generatedPresentation,
+          formData: formData,
+        }),
       })
 
-      if (formData.date) {
-        titleSlide.addText(formData.date, {
-          x: 1,
-          y: 5.5,
-          w: 8,
-          h: 0.5,
-          fontSize: 18,
-          color: "666666",
-          align: "center",
-        })
+      if (!response.ok) {
+        throw new Error("Failed to generate PowerPoint")
       }
 
-      // Table of Contents slide
-      if (generatedPresentation.tableOfContents) {
-        const tocSlide = pres.addSlide()
-        tocSlide.background = {
-          path: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-KKzuc0o3AdSKVw2TJMYYwRhJi9QsGD.png",
-        }
-
-        tocSlide.addText("Table of Content", {
-          x: 0.5,
-          y: 0.5,
-          w: 9,
-          h: 1,
-          fontSize: 28,
-          bold: true,
-          color: "333333",
-        })
-
-        const tocItems = generatedPresentation.tableOfContents
-          .split("\n")
-          .filter((item: string) => item.trim())
-          .map((item: string, index: number) => `${index + 1}. ${item.trim()}`)
-          .join("\n")
-
-        tocSlide.addText(tocItems, {
-          x: 0.5,
-          y: 1.5,
-          w: 9,
-          h: 4,
-          fontSize: 16,
-          color: "333333",
-        })
-      }
-
-      // Content slides
-      slides.forEach((slide: any) => {
-        const contentSlide = pres.addSlide()
-        contentSlide.background = {
-          path: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-KKzuc0o3AdSKVw2TJMYYwRhJi9QsGD.png",
-        }
-
-        // Add title
-        contentSlide.addText(slide.title || "", {
-          x: 0.5,
-          y: 0.5,
-          w: 9,
-          h: 1,
-          fontSize: 28,
-          bold: true,
-          color: "333333",
-        })
-
-        // Extract and add content
-        if (slide.content) {
-          const tempDiv = document.createElement("div")
-          tempDiv.innerHTML = slide.content
-          const textContent = tempDiv.textContent || tempDiv.innerText || ""
-
-          contentSlide.addText(textContent, {
-            x: 0.5,
-            y: 1.5,
-            w: 9,
-            h: 4,
-            fontSize: 16,
-            color: "333333",
-          })
-        }
-      })
-
-      // Thank you slide
-      const thankYouSlide = pres.addSlide()
-      thankYouSlide.background = {
-        path: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Main%20Slide.jpg-zFK4QxoegV9krsPbigcwKDu936VkkA.jpeg",
-      }
-
-      thankYouSlide.addText("THANK YOU", {
-        x: 1,
-        y: 3,
-        w: 8,
-        h: 2,
-        fontSize: 48,
-        bold: true,
-        color: "8B4513",
-        align: "center",
-      })
-
-      // Generate and download the PowerPoint file
+      // Download the PowerPoint file
+      const blob = await response.blob()
       const fileName = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.pptx`
-      await pres.writeFile({ fileName })
+
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = fileName
+      link.style.display = "none"
+
+      document.body.appendChild(link)
+      link.click()
+
+      setTimeout(() => {
+        if (document.body.contains(link)) {
+          document.body.removeChild(link)
+        }
+        URL.revokeObjectURL(url)
+      }, 100)
 
       toast({
         title: "PowerPoint Downloaded!",
@@ -235,7 +143,6 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
     } catch (error) {
       console.error("[v0] PowerPoint generation error:", error)
 
-      // Fallback to HTML export if PowerPoint generation fails
       const htmlContent = generatePresentationHTML(generatedPresentation, formData)
       const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" })
       const fileName = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.html`
