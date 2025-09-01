@@ -231,7 +231,7 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
   // Content slide
   return (
     <div
-      className="h-full p-4 flex flex-col"
+      className="h-full p-2 flex flex-col"
       style={{
         backgroundImage:
           "url(https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Env%20PPTsENV.%20PPT%20%20%2823.01.2023%29.jpg-GzEIJX7CGTKIxusfQ5fi9SSvkA7RKs.jpeg)",
@@ -240,12 +240,12 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
         backgroundRepeat: "no-repeat",
       }}
     >
-      <div className="flex justify-between items-start mb-4 flex-shrink-0">
+      <div className="flex justify-between items-start mb-2 flex-shrink-0">
         <img src="https://www.gmdcltd.com/assets/img/logo.jpg" alt="GMDC Logo" className="h-10" />
         <div className="text-right text-sm text-gray-800">www.gmdcltd.com</div>
       </div>
 
-      <div className="mb-4 flex-shrink-0">
+      <div className="mb-2 flex-shrink-0">
         <h2 className="text-xl font-bold text-gray-900 mb-2 break-words">{slide.title}</h2>
         {slide.subtitle && <h3 className="text-base text-gray-700 mb-2 break-words">{slide.subtitle}</h3>}
       </div>
@@ -255,9 +255,9 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
           <div className="text-gray-800 h-full">
             {Array.isArray(slide.content) ? (
               slide.content.length > 12 ? (
-                <div className="grid grid-cols-2 gap-6 h-full">
-                  <div className="space-y-2">
-                    <ul className="space-y-2">
+                <div className="grid grid-cols-2 gap-4 h-full">
+                  <div className="space-y-1">
+                    <ul className="space-y-1">
                       {slide.content
                         .slice(0, Math.min(8, Math.ceil(slide.content.length / 2)))
                         .map((item: string, index: number) => (
@@ -268,8 +268,8 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
                         ))}
                     </ul>
                   </div>
-                  <div className="space-y-2">
-                    <ul className="space-y-2">
+                  <div className="space-y-1">
+                    <ul className="space-y-1">
                       {slide.content
                         .slice(Math.ceil(slide.content.length / 2), Math.min(16, slide.content.length))
                         .map((item: string, index: number) => (
@@ -283,7 +283,7 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
                 </div>
               ) : (
                 <div className="h-full">
-                  <ul className="space-y-3">
+                  <ul className="space-y-2">
                     {slide.content.slice(0, 10).map((item: string, index: number) => (
                       <li key={index} className="flex items-start">
                         <span className="text-blue-600 mr-3 flex-shrink-0">➢</span>
@@ -314,7 +314,7 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
         )}
 
         {(slide.chart || slide.table) && (
-          <div className="mt-4 space-y-4 h-64">
+          <div className="mt-2 space-y-4 h-64">
             {slide.chart && <div className="h-48">{renderChart(slide.chart)}</div>}
             {slide.table && <div className="h-48">{renderTable(slide.table)}</div>}
           </div>
