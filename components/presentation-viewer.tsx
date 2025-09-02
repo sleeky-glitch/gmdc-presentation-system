@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, ArrowLeft, Download } from "lucide-react"
 import { SlideRenderer } from "./slide-renderer"
+import { generatePowerPoint } from "@/lib/powerpoint-generator"
 
 interface PresentationViewerProps {
   presentation: any
@@ -46,20 +47,17 @@ export function PresentationViewer({ presentation, onBackToForm }: PresentationV
     setIsExporting(true)
 
     try {
-      const response = await fetch("/api/export-powerpoint", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ presentation }),
+      console.log("[v0] Starting PowerPoint export with server action")
+
+      // Call the server action directly
+      const buffer = await generatePowerPoint(presentation)
+
+      console.log("[v0] PowerPoint buffer received, creating download")
+
+      // Convert buffer to blob and download
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
       })
-
-      if (!response.ok) {
-        throw new Error(`Export failed: ${response.statusText}`)
-      }
-
-      // Get the PowerPoint file as a blob
-      const blob = await response.blob()
 
       // Create download link
       const url = URL.createObjectURL(blob)
@@ -70,8 +68,10 @@ export function PresentationViewer({ presentation, onBackToForm }: PresentationV
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
+
+      console.log("[v0] PowerPoint download completed")
     } catch (error) {
-      console.error("Export error:", error)
+      console.error("[v0] Export error:", error)
       alert(`Export failed: ${error instanceof Error ? error.message : "Unknown error"}`)
     } finally {
       setIsExporting(false)
