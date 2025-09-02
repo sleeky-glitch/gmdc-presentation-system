@@ -234,7 +234,7 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
       className="h-full p-2 flex flex-col"
       style={{
         backgroundImage:
-          "url(https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-KKzuc0o3AdSKVw2TJMYYwRhJi9QsGD.png)",
+          "url(https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Env%20PPTsENV.%20PPT%20%20%2823.01.2023%29.jpg-GzEIJX7CGTKIxusfQ5fi9SSvkA7RKs.jpeg)",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
