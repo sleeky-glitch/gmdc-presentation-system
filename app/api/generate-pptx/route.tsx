@@ -35,10 +35,10 @@ export async function POST(request: NextRequest) {
 
         titleSlide.addText(slide.title || "Untitled", {
           x: "10%",
-          y: "35%",
+          y: "65%", // Moved title to the white space area below "Exploring digital possibilities" line in background image
           w: "80%",
           h: "10%",
-          align: "center",
+          align: "left",
           valign: "middle",
           fontSize: 36,
           bold: true,
@@ -46,22 +46,14 @@ export async function POST(request: NextRequest) {
           fontFace: "Calibri",
         })
 
-        titleSlide.addShape(pres.ShapeType.rect, {
-          x: "10%",
-          y: "47%",
-          w: "80%",
-          h: "0.3%",
-          fill: { color: "D97706" }, // Amber-600 color
-        })
-
         // Add subtitle if present
         if (slide.subtitle) {
           titleSlide.addText(slide.subtitle, {
             x: "10%",
-            y: "75%",
+            y: "75%", // Adjusted subtitle position to be below the repositioned title
             w: "80%",
             h: "8%",
-            align: "center",
+            align: "left", // Changed from center to left to match title alignment
             valign: "middle",
             fontSize: 20,
             color: "374151", // Gray color
@@ -151,7 +143,7 @@ export async function POST(request: NextRequest) {
             tocSlide.addText(`${itemNumber}.`, {
               x: useColumns ? (itemIndex < itemsPerColumn ? "8%" : "53%") : "12%",
               y: y,
-              w: "3%",
+              w: "9%", // Increased from 3% to 9% (3x wider)
               h: "4%",
               align: "left",
               valign: "middle",
