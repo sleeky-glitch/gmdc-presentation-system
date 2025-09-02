@@ -2,15 +2,21 @@ import { type NextRequest, NextResponse } from "next/server"
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("[v0] PowerPoint export API called")
     const { presentation } = await request.json()
+    console.log("[v0] Received presentation data:", presentation?.title, "slides:", presentation?.slides?.length)
 
     if (!presentation || !presentation.slides) {
+      console.log("[v0] Invalid presentation data")
       return NextResponse.json({ error: "Invalid presentation data" }, { status: 400 })
     }
 
-    // Dynamic import to avoid bundling issues
+    console.log("[v0] Importing officegen...")
     const officegen = await import("officegen")
+    console.log("[v0] Officegen imported successfully")
+
     const pptx = officegen.default("pptx")
+    console.log("[v0] PPTX instance created")
 
     // Set presentation properties
     pptx.setDocTitle(presentation.title || "GMDC Presentation")
@@ -20,6 +26,7 @@ export async function POST(request: NextRequest) {
     // Process each slide
     for (let i = 0; i < presentation.slides.length; i++) {
       const slide = presentation.slides[i]
+      console.log("[v0] Processing slide", i + 1, ":", slide.title)
       const pptxSlide = pptx.makeNewSlide()
 
       // Add slide title
@@ -101,16 +108,20 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Generate the PowerPoint file
+    console.log("[v0] All slides processed, generating PowerPoint file...")
+
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = []
 
       pptx.on("data", (chunk: Buffer) => {
         chunks.push(chunk)
+        console.log("[v0] Received data chunk, size:", chunk.length)
       })
 
       pptx.on("end", () => {
+        console.log("[v0] PowerPoint generation completed")
         const buffer = Buffer.concat(chunks)
+        console.log("[v0] Final buffer size:", buffer.length)
 
         resolve(
           new NextResponse(buffer, {
@@ -125,15 +136,18 @@ export async function POST(request: NextRequest) {
       })
 
       pptx.on("error", (error: Error) => {
-        console.error("PowerPoint generation error:", error)
-        reject(NextResponse.json({ error: "Failed to generate PowerPoint file" }, { status: 500 }))
+        console.error("[v0] PowerPoint generation error:", error)
+        reject(
+          NextResponse.json({ error: "Failed to generate PowerPoint file", details: error.message }, { status: 500 }),
+        )
       })
 
       // Start generation
+      console.log("[v0] Starting PowerPoint generation...")
       pptx.generate()
     })
   } catch (error) {
-    console.error("PowerPoint export error:", error)
+    console.error("[v0] PowerPoint export error:", error)
     return NextResponse.json(
       {
         error: "Failed to export PowerPoint presentation",
