@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import officegen from "officegen"
 
 export async function POST(request: NextRequest) {
   try {
+    const officegen = (await import("officegen")).default
+
     const { presentation } = await request.json()
 
     if (!presentation || !presentation.slides) {
