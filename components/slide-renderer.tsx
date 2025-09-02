@@ -149,7 +149,7 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
           backgroundRepeat: "no-repeat",
         }}
       >
-        <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2 text-center">
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
           <h1 className="text-4xl font-bold text-amber-700 mb-2">{slide.title}</h1>
           <div className="w-64 h-1 bg-amber-600 mx-auto mb-4"></div>
           {slide.date && <p className="text-lg text-gray-600 mt-4">{slide.date}</p>}
