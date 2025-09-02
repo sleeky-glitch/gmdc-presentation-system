@@ -164,13 +164,38 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
     )
   }
 
+  if (slide.type === "thank-you" || slideNumber === totalSlides) {
+    return (
+      <div
+        className="h-full flex flex-col justify-center items-center p-8 relative"
+        style={{
+          backgroundImage: "url(/content-slide-background.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        <div className="flex justify-between items-start mb-2 absolute top-4 left-4 right-4">
+          <img src="https://www.gmdcltd.com/assets/img/logo.jpg" alt="GMDC Logo" className="h-10" />
+          <div className="text-right text-sm text-gray-800">www.gmdcltd.com</div>
+        </div>
+
+        <div className="text-center" style={{ marginTop: "10px" }}>
+          <h1 className="text-6xl font-bold text-amber-700 mb-4">THANK YOU</h1>
+          <div className="w-64 h-1 bg-amber-600 mx-auto"></div>
+        </div>
+
+        <div className="absolute bottom-4 right-4 text-sm text-gray-700">{slideNumber}</div>
+      </div>
+    )
+  }
+
   if (slide.type === "table-of-contents") {
     return (
       <div
         className="h-full p-4 flex flex-col"
         style={{
-          backgroundImage:
-            "url(https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Env%20PPTsENV.%20PPT%20%20%2823.01.2023%29.jpg-GzEIJX7CGTKIxusfQ5fi9SSvkA7RKs.jpeg)",
+          backgroundImage: "url(/content-slide-background.png)",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
@@ -233,8 +258,7 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
     <div
       className="h-full p-2 flex flex-col"
       style={{
-        backgroundImage:
-          "url(https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Env%20PPTsENV.%20PPT%20%20%2823.01.2023%29.jpg-GzEIJX7CGTKIxusfQ5fi9SSvkA7RKs.jpeg)",
+        backgroundImage: "url(/content-slide-background.png)",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
