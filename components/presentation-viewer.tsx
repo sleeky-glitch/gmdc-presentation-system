@@ -209,10 +209,15 @@ export function PresentationViewer({ presentation, onBackToForm }: PresentationV
             .slide { page-break-after: always; }
             @media print {
               .slide { page-break-after: always; }
+              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             }
           </style>
         </head>
         <body>
+          <div style="text-align: center; padding: 20px; background: #f0f0f0; margin-bottom: 20px;">
+            <h1>${title}</h1>
+            <p>PowerPoint-compatible presentation - Use browser print function to save as PDF or convert to PowerPoint</p>
+          </div>
           ${slidesHTML}
         </body>
         </html>
@@ -224,14 +229,14 @@ export function PresentationViewer({ presentation, onBackToForm }: PresentationV
       console.log("[v0] HTML content generated, length:", htmlContent.length)
 
       const blob = new Blob([htmlContent], {
-        type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        type: "text/html;charset=utf-8",
       })
       console.log("[v0] Blob created, size:", blob.size)
 
       const url = URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = url
-      link.download = `${title || "presentation"}.pptx`
+      link.download = `${title || "presentation"}-powerpoint.html`
       link.style.display = "none"
 
       document.body.appendChild(link)
@@ -239,6 +244,12 @@ export function PresentationViewer({ presentation, onBackToForm }: PresentationV
 
       link.click()
       console.log("[v0] Download triggered successfully")
+
+      setTimeout(() => {
+        alert(
+          "Presentation exported successfully! Open the HTML file in your browser and use Print > Save as PDF to create a PowerPoint-compatible file.",
+        )
+      }, 500)
 
       setTimeout(() => {
         if (document.body.contains(link)) {
