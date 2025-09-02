@@ -1,6 +1,6 @@
 export async function POST(request: Request) {
   try {
-    console.log("[v0] Starting PowerPoint generation with pure JS solution...")
+    console.log("[v0] Starting PowerPoint generation with corrected structure...")
 
     const data = await request.json()
     console.log("[v0] Received data:", JSON.stringify(data, null, 2))
@@ -8,13 +8,76 @@ export async function POST(request: Request) {
     const { default: PizZip } = await import("pizzip")
     console.log("[v0] PizZip imported successfully")
 
-    // Create PowerPoint XML structure
-    const createPowerPointXML = (slides: any[]) => {
-      const slideXMLs = slides.map((slide, index) => {
-        const slideId = index + 1
+    // Create PowerPoint structure
+    const zip = new PizZip()
 
-        if (slide.type === "title") {
-          return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    zip.file(
+      "[Content_Types].xml",
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
+  <Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>
+  <Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
+  <Override PartName="/ppt/slideLayouts/slideLayout2.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
+  <Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>
+  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+  ${data.slides
+    ?.map(
+      (_: any, index: number) =>
+        `<Override PartName="/ppt/slides/slide${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`,
+    )
+    .join("\n  ")}
+</Types>`,
+    )
+
+    zip.file(
+      "_rels/.rels",
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+</Relationships>`,
+    )
+
+    zip.file(
+      "docProps/core.xml",
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <dc:title>${data.title || "GMDC Presentation"}</dc:title>
+  <dc:creator>GMDC</dc:creator>
+  <cp:lastModifiedBy>GMDC</cp:lastModifiedBy>
+  <cp:revision>1</cp:revision>
+  <dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:created>
+  <dcterms:modified xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:modified>
+</cp:coreProperties>`,
+    )
+
+    zip.file(
+      "docProps/app.xml",
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+  <Application>GMDC Presentation System</Application>
+  <ScaleCrop>false</ScaleCrop>
+  <LinksUpToDate>false</LinksUpToDate>
+  <SharedDoc>false</SharedDoc>
+  <HyperlinksChanged>false</HyperlinksChanged>
+  <AppVersion>1.0</AppVersion>
+  <Slides>${data.slides?.length || 0}</Slides>
+  <PresentationFormat>On-screen Show (16:9)</PresentationFormat>
+</Properties>`,
+    )
+
+    // Add slides
+    const createSlideXML = (slide: any, index: number) => {
+      const slideId = index + 1
+      const layoutRef = index === 0 ? 1 : 2
+
+      if (slide.type === "title") {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
   <p:cSld>
     <p:spTree>
@@ -103,8 +166,8 @@ export async function POST(request: Request) {
     <a:masterClrMapping/>
   </p:clrMapOvr>
 </p:sld>`
-        } else {
-          return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      } else {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
   <p:cSld>
     <p:spTree>
@@ -222,85 +285,28 @@ export async function POST(request: Request) {
     <a:masterClrMapping/>
   </p:clrMapOvr>
 </p:sld>`
-        }
-      })
-
-      return slideXMLs
+      }
     }
 
-    // Create PowerPoint structure
-    const zip = new PizZip()
-
-    zip.file(
-      "[Content_Types].xml",
-      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
-  <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
-  <Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>
-  <Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
-  <Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>
-  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
-  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
-  ${data.slides
-    ?.map(
-      (_: any, index: number) =>
-        `<Override PartName="/ppt/slides/slide${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`,
-    )
-    .join("\n  ")}
-</Types>`,
-    )
-
-    zip.file(
-      "_rels/.rels",
-      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
-  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
-  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
-</Relationships>`,
-    )
-
-    zip.file(
-      "docProps/core.xml",
-      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <dc:title>${data.title || "GMDC Presentation"}</dc:title>
-  <dc:creator>GMDC</dc:creator>
-  <cp:lastModifiedBy>GMDC</cp:lastModifiedBy>
-  <cp:revision>1</cp:revision>
-  <dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:created>
-  <dcterms:modified xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:modified>
-</cp:coreProperties>`,
-    )
-
-    zip.file(
-      "docProps/app.xml",
-      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
-  <Application>GMDC Presentation System</Application>
-  <ScaleCrop>false</ScaleCrop>
-  <LinksUpToDate>false</LinksUpToDate>
-  <SharedDoc>false</SharedDoc>
-  <HyperlinksChanged>false</HyperlinksChanged>
-  <AppVersion>1.0</AppVersion>
-  <Slides>${data.slides?.length || 0}</Slides>
-  <PresentationFormat>On-screen Show (16:9)</PresentationFormat>
-</Properties>`,
-    )
-
-    // Add slides
-    const slideXMLs = createPowerPointXML(data.slides || [])
-    slideXMLs.forEach((slideXML, index) => {
-      zip.file(`ppt/slides/slide${index + 1}.xml`, slideXML)
+    // Add slides with proper structure
+    data.slides?.forEach((slide: any, index: number) => {
+      zip.file(`ppt/slides/slide${index + 1}.xml`, createSlideXML(slide, index))
     })
 
-    // Add presentation.xml
+    data.slides?.forEach((_: any, index: number) => {
+      zip.file(
+        `ppt/slides/_rels/slide${index + 1}.xml.rels`,
+        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout${index === 0 ? "1" : "2"}.xml"/>
+</Relationships>`,
+      )
+    })
+
     zip.file(
       "ppt/presentation.xml",
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" saveSubsetFonts="1">
   <p:sldMasterIdLst>
     <p:sldMasterId id="2147483648" r:id="rId1"/>
   </p:sldMasterIdLst>
@@ -319,7 +325,6 @@ export async function POST(request: Request) {
 </p:presentation>`,
     )
 
-    // Add relationships
     zip.file(
       "ppt/_rels/presentation.xml.rels",
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -332,6 +337,75 @@ export async function POST(request: Request) {
         `<Relationship Id="rId${index + 3}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${index + 1}.xml"/>`,
     )
     .join("\n  ")}
+</Relationships>`,
+    )
+
+    zip.file(
+      "ppt/slideMasters/_rels/slideMaster1.xml.rels",
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout2.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/>
+</Relationships>`,
+    )
+
+    zip.file(
+      "ppt/slideLayouts/slideLayout2.xml",
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="obj" preserve="1">
+  <p:cSld name="Title and Content">
+    <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/>
+        <p:cNvGrpSpPr/>
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr>
+        <a:xfrm>
+          <a:off x="0" y="0"/>
+          <a:ext cx="0" cy="0"/>
+          <a:chOff x="0" y="0"/>
+          <a:chExt cx="0" cy="0"/>
+        </a:xfrm>
+      </p:grpSpPr>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="2" name="Title 1"/>
+          <p:cNvSpPr>
+            <a:spLocks noGrp="1"/>
+          </p:cNvSpPr>
+          <p:nvPr>
+            <p:ph type="title"/>
+          </p:nvPr>
+        </p:nvSpPr>
+        <p:spPr/>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="3" name="Content Placeholder 2"/>
+          <p:cNvSpPr>
+            <a:spLocks noGrp="1"/>
+          </p:cNvSpPr>
+          <p:nvPr>
+            <p:ph idx="1"/>
+          </p:nvPr>
+        </p:nvSpPr>
+        <p:spPr/>
+      </p:sp>
+    </p:spTree>
+  </p:cSld>
+  <p:clrMapOvr>
+    <a:masterClrMapping/>
+  </p:clrMapOvr>
+</p:sldLayout>`,
+    )
+
+    zip.file(
+      "ppt/slideLayouts/_rels/slideLayout2.xml.rels",
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>
 </Relationships>`,
     )
 
@@ -359,6 +433,7 @@ export async function POST(request: Request) {
   <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
   <p:sldLayoutIdLst>
     <p:sldLayoutId id="2147483649" r:id="rId1"/>
+    <p:sldLayoutId id="2147483650" r:id="rId2"/>
   </p:sldLayoutIdLst>
   <p:txStyles>
     <p:titleStyle>
@@ -392,15 +467,6 @@ export async function POST(request: Request) {
     </p:otherStyle>
   </p:txStyles>
 </p:sldMaster>`,
-    )
-
-    zip.file(
-      "ppt/slideMasters/_rels/slideMaster1.xml.rels",
-      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
-  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/>
-</Relationships>`,
     )
 
     zip.file(
@@ -668,7 +734,7 @@ export async function POST(request: Request) {
     console.log("[v0] PowerPoint structure created, generating buffer...")
 
     const buffer = zip.generate({ type: "nodebuffer" })
-    console.log("[v0] PowerPoint generation completed with pure JavaScript")
+    console.log("[v0] PowerPoint generation completed with corrected structure")
 
     return new Response(buffer, {
       status: 200,
