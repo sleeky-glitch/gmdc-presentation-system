@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
         titleSlide.addText(slide.title || "Untitled", {
           x: "10%",
-          y: "60%", // Moved higher to be above the line
+          y: "35%",
           w: "80%",
           h: "10%",
           align: "center",
@@ -46,12 +46,11 @@ export async function POST(request: NextRequest) {
           fontFace: "Calibri",
         })
 
-        // Add amber divider line below title
         titleSlide.addShape(pres.ShapeType.rect, {
-          x: "37.5%",
-          y: "72%",
-          w: "25%",
-          h: "0.5%",
+          x: "10%",
+          y: "47%",
+          w: "80%",
+          h: "0.3%",
           fill: { color: "D97706" }, // Amber-600 color
         })
 
@@ -69,20 +68,6 @@ export async function POST(request: NextRequest) {
             fontFace: "Calibri",
           })
         }
-
-        // Add website at bottom center
-        titleSlide.addText("www.gmdcltd.com", {
-          x: "10%",
-          y: "88%",
-          w: "80%",
-          h: "6%",
-          align: "center",
-          valign: "middle",
-          fontSize: 14,
-          bold: true,
-          color: "374151",
-          fontFace: "Calibri",
-        })
       } else if (slide.type === "thank-you" || slideNumber === totalSlides) {
         const thankYouSlide = pres.addSlide()
 
@@ -90,31 +75,9 @@ export async function POST(request: NextRequest) {
           path: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-LFnRVQiz9vMDJdWEQl4VHawgbzCxLR.png",
         }
 
-        // Add GMDC logo (top left)
-        thankYouSlide.addImage({
-          path: "https://www.gmdcltd.com/assets/img/logo.jpg",
-          x: "2%",
-          y: "2%",
-          w: "15%",
-          h: "8%",
-        })
-
-        // Add website (top right)
-        thankYouSlide.addText("www.gmdcltd.com", {
-          x: "75%",
-          y: "2%",
-          w: "23%",
-          h: "8%",
-          align: "right",
-          valign: "middle",
-          fontSize: 14,
-          color: "1F2937",
-          fontFace: "Calibri",
-        })
-
         thankYouSlide.addText("THANK YOU", {
           x: "10%",
-          y: "35%", // Moved higher to be above the line
+          y: "25%", // Moved higher to be above the horizontal line in background
           w: "80%",
           h: "15%",
           align: "center",
@@ -123,15 +86,6 @@ export async function POST(request: NextRequest) {
           bold: true,
           color: "B45309", // Amber-700 color to match preview
           fontFace: "Calibri",
-        })
-
-        // Add amber divider line below THANK YOU
-        thankYouSlide.addShape(pres.ShapeType.rect, {
-          x: "37.5%",
-          y: "52%",
-          w: "25%",
-          h: "0.5%",
-          fill: { color: "D97706" }, // Amber-600 color
         })
 
         // Add slide number (bottom right)
@@ -153,31 +107,9 @@ export async function POST(request: NextRequest) {
           path: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-LFnRVQiz9vMDJdWEQl4VHawgbzCxLR.png",
         }
 
-        // Add GMDC logo (top left)
-        tocSlide.addImage({
-          path: "https://www.gmdcltd.com/assets/img/logo.jpg",
-          x: "2%",
-          y: "2%",
-          w: "15%",
-          h: "8%",
-        })
-
-        // Add website (top right)
-        tocSlide.addText("www.gmdcltd.com", {
-          x: "75%",
-          y: "2%",
-          w: "23%",
-          h: "8%",
-          align: "right",
-          valign: "middle",
-          fontSize: 14,
-          color: "1F2937",
-          fontFace: "Calibri",
-        })
-
         tocSlide.addText("Table of Content", {
           x: "10%",
-          y: "8%", // Moved higher to be above the line
+          y: "5%", // Moved up to be above the horizontal line
           w: "80%",
           h: "8%",
           align: "center",
@@ -263,31 +195,9 @@ export async function POST(request: NextRequest) {
           path: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-LFnRVQiz9vMDJdWEQl4VHawgbzCxLR.png",
         }
 
-        // Add GMDC logo (top left)
-        contentSlide.addImage({
-          path: "https://www.gmdcltd.com/assets/img/logo.jpg",
-          x: "2%",
-          y: "2%",
-          w: "15%",
-          h: "8%",
-        })
-
-        // Add website (top right)
-        contentSlide.addText("www.gmdcltd.com", {
-          x: "75%",
-          y: "2%",
-          w: "23%",
-          h: "8%",
-          align: "right",
-          valign: "middle",
-          fontSize: 14,
-          color: "1F2937",
-          fontFace: "Calibri",
-        })
-
         contentSlide.addText(slide.title || "Content", {
           x: "5%",
-          y: "8%", // Moved higher to be above the line
+          y: "5%", // Moved up to be above the horizontal line
           w: "90%",
           h: "8%",
           align: "left",
@@ -302,7 +212,7 @@ export async function POST(request: NextRequest) {
         if (slide.subtitle) {
           contentSlide.addText(slide.subtitle, {
             x: "5%",
-            y: "16%", // Adjusted for new title position
+            y: "13%", // Adjusted for new title position
             w: "90%",
             h: "6%",
             align: "left",
@@ -329,9 +239,9 @@ export async function POST(request: NextRequest) {
 
               contentSlide.addText(leftContent, {
                 x: "5%",
-                y: slide.subtitle ? "24%" : "18%", // Adjusted for new title position
+                y: slide.subtitle ? "21%" : "15%", // Adjusted for new title position
                 w: "42%",
-                h: "60%",
+                h: "55%", // Reduced height to avoid overlapping with bottom imagery
                 align: "left",
                 valign: "top",
                 fontSize: 14,
@@ -349,9 +259,9 @@ export async function POST(request: NextRequest) {
 
               contentSlide.addText(rightContent, {
                 x: "53%",
-                y: slide.subtitle ? "24%" : "18%", // Adjusted for new title position
+                y: slide.subtitle ? "21%" : "15%", // Adjusted for new title position
                 w: "42%",
-                h: "60%",
+                h: "55%", // Reduced height to avoid overlapping with bottom imagery
                 align: "left",
                 valign: "top",
                 fontSize: 14,
@@ -369,9 +279,9 @@ export async function POST(request: NextRequest) {
 
               contentSlide.addText(contentText, {
                 x: "5%",
-                y: slide.subtitle ? "24%" : "18%", // Adjusted for new title position
+                y: slide.subtitle ? "21%" : "15%", // Adjusted for new title position
                 w: "90%",
-                h: "60%",
+                h: "55%", // Reduced height to avoid overlapping with bottom imagery
                 align: "left",
                 valign: "top",
                 fontSize: 14,
@@ -386,9 +296,9 @@ export async function POST(request: NextRequest) {
 
             contentSlide.addText(contentText, {
               x: "5%",
-              y: slide.subtitle ? "24%" : "18%", // Adjusted for new title position
+              y: slide.subtitle ? "21%" : "15%", // Adjusted for new title position
               w: "90%",
-              h: "60%",
+              h: "55%", // Reduced height to avoid overlapping with bottom imagery
               align: "left",
               valign: "top",
               fontSize: 14,
@@ -399,10 +309,10 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Add slide number (bottom right)
+        // Add slide number (bottom right) - positioned above the bottom imagery
         contentSlide.addText(slideNumber.toString(), {
-          x: "92%",
-          y: "92%",
+          x: "85%", // Moved left to avoid overlapping with bottom imagery
+          y: "85%", // Moved up to avoid overlapping with bottom imagery
           w: "6%",
           h: "6%",
           align: "right",
