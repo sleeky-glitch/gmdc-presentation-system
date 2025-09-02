@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
           y: "65%", // Moved title to the white space area below "Exploring digital possibilities" line in background image
           w: "80%",
           h: "10%",
-          align: "left",
+          align: "center", // Changed from left to center alignment for title slide
           valign: "middle",
           fontSize: 36,
           bold: true,
@@ -69,9 +69,9 @@ export async function POST(request: NextRequest) {
 
         thankYouSlide.addText("THANK YOU", {
           x: "10%",
-          y: "25%", // Moved higher to be above the horizontal line in background
+          y: "40%", // Moved to exact center of slide (50% - 10% height / 2)
           w: "80%",
-          h: "15%",
+          h: "20%",
           align: "center",
           valign: "middle",
           fontSize: 60,
@@ -155,9 +155,9 @@ export async function POST(request: NextRequest) {
 
             // Add item text
             tocSlide.addText(cleanItem, {
-              x: x,
+              x: useColumns ? (itemIndex < itemsPerColumn ? "20%" : "65%") : "24%", // Increased spacing between numbers and text
               y: y,
-              w: w,
+              w: useColumns ? "30%" : "65%", // Adjusted width to accommodate increased spacing
               h: "4%",
               align: "left",
               valign: "middle",
