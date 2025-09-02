@@ -46,126 +46,32 @@ export function PresentationViewer({ presentation, onBackToForm }: PresentationV
     setIsExporting(true)
 
     try {
-      // Dynamic import to avoid build issues
-      const PptxGenJS = (await import("pptxgenjs")).default
-      const pres = new PptxGenJS()
-
-      // Set presentation properties
-      pres.layout = "LAYOUT_16x9"
-      pres.title = title
-
-      slides.forEach((slide: any, index: number) => {
-        const pptSlide = pres.addSlide()
-
-        if (slide.type === "title") {
-          // Title slide with background image
-          pptSlide.background = {
-            path: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Main%20Slide.jpg-zFK4QxoegV9krsPbigcwKDu936VkkA.jpeg",
-          }
-          pptSlide.addText(slide.title, {
-            x: "10%",
-            y: "45%",
-            w: "80%",
-            h: "20%",
-            fontSize: 48,
-            color: "D97706",
-            bold: true,
-            align: "center",
-            valign: "middle",
-          })
-        } else if (slide.type === "thank-you") {
-          // Thank you slide
-          pptSlide.background = { path: "/content-slide-background.png" }
-          pptSlide.addText("THANK YOU", {
-            x: "10%",
-            y: "40%",
-            w: "80%",
-            h: "20%",
-            fontSize: 72,
-            color: "D97706",
-            bold: true,
-            align: "center",
-            valign: "middle",
-          })
-          // Add slide number
-          pptSlide.addText(`${index + 1}`, {
-            x: "90%",
-            y: "90%",
-            w: "8%",
-            h: "8%",
-            fontSize: 16,
-            color: "666666",
-            align: "right",
-          })
-        } else {
-          // Content slide
-          pptSlide.background = { path: "/content-slide-background.png" }
-
-          // Add GMDC logo
-          pptSlide.addImage({
-            path: "/gmdc-logo-white.png",
-            x: 0.2,
-            y: 0.2,
-            w: 0.8,
-            h: 0.8,
-          })
-
-          // Add website URL
-          pptSlide.addText("www.gmdcltd.com", {
-            x: "85%",
-            y: "5%",
-            w: "14%",
-            h: "5%",
-            fontSize: 14,
-            color: "666666",
-            align: "right",
-          })
-
-          // Add title
-          pptSlide.addText(slide.title, {
-            x: "5%",
-            y: "15%",
-            w: "90%",
-            h: "10%",
-            fontSize: 36,
-            color: "1F2937",
-            bold: true,
-            align: "center",
-          })
-
-          // Add content
-          const contentText = Array.isArray(slide.content)
-            ? slide.content.map((item: string) => `• ${item}`).join("\n")
-            : slide.content || ""
-
-          pptSlide.addText(contentText, {
-            x: "5%",
-            y: "30%",
-            w: "90%",
-            h: "60%",
-            fontSize: 18,
-            color: "374151",
-            align: "left",
-            valign: "top",
-          })
-
-          // Add slide number
-          pptSlide.addText(`${index + 1}`, {
-            x: "90%",
-            y: "90%",
-            w: "8%",
-            h: "8%",
-            fontSize: 16,
-            color: "666666",
-            align: "right",
-          })
-        }
+      const response = await fetch("/api/export-powerpoint", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ presentation }),
       })
 
-      // Save the presentation
-      await pres.writeFile({ fileName: `${title || "presentation"}.pptx` })
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`)
+      }
+
+      // Get the PowerPoint file as a blob
+      const blob = await response.blob()
+
+      // Create download link
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${title || "presentation"}.pptx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
     } catch (error) {
-      console.error("PowerPoint export error:", error)
+      console.error("Export error:", error)
       alert(`Export failed: ${error instanceof Error ? error.message : "Unknown error"}`)
     } finally {
       setIsExporting(false)
@@ -186,7 +92,7 @@ export function PresentationViewer({ presentation, onBackToForm }: PresentationV
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting}>
             <Download className="mr-2 h-4 w-4" />
-            {isExporting ? "Exporting..." : "Export PPT"}
+            {isExporting ? "Exporting..." : "Export PPTX"}
           </Button>
         </div>
       </div>
