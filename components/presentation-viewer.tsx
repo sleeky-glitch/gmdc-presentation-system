@@ -41,214 +41,121 @@ export function PresentationViewer({ presentation, onBackToForm }: PresentationV
     setCurrentSlide(index)
   }
 
-  const handleExport = () => {
-    console.log("[v0] Export button clicked - starting PowerPoint generation")
-    console.log("[v0] Presentation data:", { title, slideCount: slides.length })
-
+  const handleExport = async () => {
     try {
-      const generatePowerPointHTML = () => {
-        console.log("[v0] Generating PowerPoint HTML content...")
-        const slidesHTML = slides
-          .map((slide: any, index: number) => {
-            console.log(`[v0] Processing slide ${index + 1}: ${slide.type}`)
-            return `
-        <div class="slide" style="
-          width: 1280px;
-          height: 720px;
-          background: white;
-          margin: 20px auto;
-          border: 1px solid #ccc;
-          page-break-after: always;
-          position: relative;
-          overflow: hidden;
-        ">
-          ${
-            slide.type === "title"
-              ? `
-            <div style="
-              background-image: url('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Main%20Slide.jpg-zFK4QxoegV9krsPbigcwKDu936VkkA.jpeg');
-              background-size: cover;
-              background-position: center;
-              width: 100%;
-              height: 100%;
-              position: relative;
-            ">
-              <div style="
-                position: absolute;
-                top: 320px;
-                left: 50%;
-                transform: translateX(-50%);
-                text-align: center;
-                color: #D97706;
-                font-size: 48px;
-                font-weight: bold;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-              ">
-                ${slide.title}
-              </div>
-            </div>
-          `
-              : slide.type === "thank-you"
-                ? `
-            <div style="
-              background-image: url('/content-slide-background.png');
-              background-size: cover;
-              background-position: center;
-              width: 100%;
-              height: 100%;
-              position: relative;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            ">
-              <div style="
-                color: #D97706;
-                font-size: 72px;
-                font-weight: bold;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-                text-align: center;
-              ">
-                THANK YOU
-                <div style="
-                  width: 200px;
-                  height: 4px;
-                  background: #D97706;
-                  margin: 20px auto;
-                "></div>
-              </div>
-              <div style="
-                position: absolute;
-                bottom: 20px;
-                right: 20px;
-                color: #666;
-                font-size: 16px;
-              ">
-                ${index + 1}
-              </div>
-            </div>
-          `
-                : `
-            <div style="
-              background-image: url('/content-slide-background.png');
-              background-size: cover;
-              background-position: center;
-              width: 100%;
-              height: 100%;
-              position: relative;
-              padding: 40px;
-              box-sizing: border-box;
-            ">
-              <div style="
-                position: absolute;
-                top: 20px;
-                left: 20px;
-                width: 60px;
-                height: 60px;
-                background-image: url('/gmdc-logo-white.png');
-                background-size: contain;
-                background-repeat: no-repeat;
-              "></div>
-              <div style="
-                position: absolute;
-                top: 20px;
-                right: 20px;
-                color: #666;
-                font-size: 14px;
-              ">
-                www.gmdcltd.com
-              </div>
-              <h2 style="
-                color: #1F2937;
-                font-size: 36px;
-                font-weight: bold;
-                margin-bottom: 30px;
-                text-align: center;
-              ">
-                ${slide.title}
-              </h2>
-              <div style="
-                color: #374151;
-                font-size: 18px;
-                line-height: 1.6;
-                max-height: 500px;
-                overflow: hidden;
-              ">
-                ${
-                  Array.isArray(slide.content)
-                    ? slide.content.map((item: string) => `<div style="margin-bottom: 15px;">• ${item}</div>`).join("")
-                    : slide.content || ""
-                }
-              </div>
-              <div style="
-                position: absolute;
-                bottom: 20px;
-                right: 20px;
-                color: #666;
-                font-size: 16px;
-              ">
-                ${index + 1}
-              </div>
-            </div>
-          `
+      // Dynamic import to avoid build issues
+      const PptxGenJS = (await import("pptxgenjs")).default
+
+      const pptx = new PptxGenJS()
+      pptx.defineLayout({ name: "LAYOUT_16x9", width: 10, height: 5.625 })
+      pptx.layout = "LAYOUT_16x9"
+
+      slides.forEach((slide: any, index: number) => {
+        const pptxSlide = pptx.addSlide()
+
+        if (slide.type === "title") {
+          // Title slide
+          pptxSlide.background = {
+            path: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Main%20Slide.jpg-zFK4QxoegV9krsPbigcwKDu936VkkA.jpeg",
           }
-        </div>
-      `
+          pptxSlide.addText(slide.title, {
+            x: 1,
+            y: 2.5,
+            w: 8,
+            h: 1,
+            fontSize: 36,
+            color: "D97706",
+            bold: true,
+            align: "center",
           })
-          .join("")
+        } else if (slide.type === "thank-you") {
+          // Thank you slide
+          pptxSlide.background = { path: "/content-slide-background.png" }
+          pptxSlide.addText("THANK YOU", {
+            x: 2,
+            y: 2,
+            w: 6,
+            h: 2,
+            fontSize: 48,
+            color: "D97706",
+            bold: true,
+            align: "center",
+          })
+        } else {
+          // Content slide
+          pptxSlide.background = { path: "/content-slide-background.png" }
 
-        console.log("[v0] HTML slides generated successfully")
-        return `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>${title}</title>
-          <style>
-            @page { size: 1280px 720px; margin: 0; }
-            body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
-            .slide { page-break-after: always; }
-            @media print {
-              .slide { page-break-after: always; }
-            }
-          </style>
-        </head>
-        <body>
-          ${slidesHTML}
-        </body>
-        </html>
-      `
-      }
+          // Add GMDC logo
+          pptxSlide.addImage({
+            path: "/gmdc-logo-white.png",
+            x: 0.2,
+            y: 0.2,
+            w: 0.8,
+            h: 0.8,
+          })
 
-      console.log("[v0] Starting HTML generation...")
-      const htmlContent = generatePowerPointHTML()
-      console.log("[v0] HTML content generated, length:", htmlContent.length)
+          // Add website URL
+          pptxSlide.addText("www.gmdcltd.com", {
+            x: 8,
+            y: 0.2,
+            w: 1.8,
+            h: 0.3,
+            fontSize: 12,
+            color: "666666",
+          })
 
-      const blob = new Blob([htmlContent], {
-        type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      })
-      console.log("[v0] Blob created, size:", blob.size)
+          // Add title
+          pptxSlide.addText(slide.title, {
+            x: 1,
+            y: 1,
+            w: 8,
+            h: 0.8,
+            fontSize: 28,
+            color: "1F2937",
+            bold: true,
+            align: "center",
+          })
 
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = url
-      link.download = `${title || "presentation"}.pptx`
-      link.style.display = "none"
+          // Add content
+          if (Array.isArray(slide.content)) {
+            slide.content.forEach((item: string, itemIndex: number) => {
+              pptxSlide.addText(`• ${item}`, {
+                x: 1,
+                y: 2 + itemIndex * 0.4,
+                w: 8,
+                h: 0.4,
+                fontSize: 16,
+                color: "374151",
+              })
+            })
+          } else if (slide.content) {
+            pptxSlide.addText(slide.content, {
+              x: 1,
+              y: 2,
+              w: 8,
+              h: 2.5,
+              fontSize: 16,
+              color: "374151",
+            })
+          }
 
-      document.body.appendChild(link)
-      console.log("[v0] Download link created and added to DOM")
-
-      link.click()
-      console.log("[v0] Download triggered successfully")
-
-      setTimeout(() => {
-        if (document.body.contains(link)) {
-          document.body.removeChild(link)
+          // Add slide number
+          pptxSlide.addText((index + 1).toString(), {
+            x: 9,
+            y: 4.8,
+            w: 0.8,
+            h: 0.3,
+            fontSize: 14,
+            color: "666666",
+            align: "right",
+          })
         }
-        URL.revokeObjectURL(url)
-        console.log("[v0] Cleanup completed")
-      }, 1000)
+      })
+
+      // Generate and download PPTX
+      await pptx.writeFile({ fileName: `${title || "presentation"}.pptx` })
     } catch (error) {
-      console.error("[v0] Export error:", error)
+      console.error("Export error:", error)
       alert(`Export failed: ${error instanceof Error ? error.message : "Unknown error"}`)
     }
   }
