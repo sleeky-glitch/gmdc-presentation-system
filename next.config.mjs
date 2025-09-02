@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   webpack: (config, { isServer }) => {
-    // Exclude officegen from client-side bundle
+    // Exclude officegen and related Node.js modules from client-side bundle
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -12,7 +12,13 @@ const nextConfig = {
         zlib: false,
         util: false,
         buffer: false,
+        os: false,
+        events: false,
+        child_process: false,
       }
+      
+      config.externals = config.externals || []
+      config.externals.push('officegen')
     }
     
     return config
