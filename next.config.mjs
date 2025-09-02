@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   webpack: (config, { isServer }) => {
-    // Exclude officegen and related Node.js modules from client-side bundle
+    // Exclude Node.js modules from client-side bundle
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -18,14 +18,12 @@ const nextConfig = {
       }
       
       config.externals = config.externals || []
-      config.externals.push('officegen')
+      config.externals.push('officegen', 'pptxgenjs')
     }
     
     return config
   },
-  experimental: {
-    serverComponentsExternalPackages: ['officegen']
-  },
+  serverExternalPackages: ['officegen', 'pptxgenjs'],
   eslint: {
     ignoreDuringBuilds: true,
   },
