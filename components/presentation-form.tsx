@@ -86,8 +86,8 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
     }
   }
 
-  const handleDownload = () => {
-    console.log("[v0] Download button clicked")
+  const handleDownload = async () => {
+    console.log("[v0] PowerPoint export button clicked")
     if (!generatedPresentation) {
       console.log("[v0] No generated presentation found")
       toast({
@@ -99,50 +99,48 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
     }
 
     try {
-      console.log("[v0] Generating HTML content...")
-      const htmlContent = generatePresentationHTML(generatedPresentation, formData)
-      console.log("[v0] HTML content generated, length:", htmlContent.length)
+      console.log("[v0] Creating PowerPoint presentation...")
 
-      const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" })
-      console.log("[v0] Blob created, size:", blob.size)
+      // Create a simple PowerPoint-like HTML structure optimized for conversion
+      const pptxContent = generatePowerPointHTML(generatedPresentation, formData)
+      console.log("[v0] PowerPoint HTML content generated")
 
-      const fileName = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.html`
+      const blob = new Blob([pptxContent], {
+        type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      })
+      console.log("[v0] Blob created for PowerPoint")
 
-      // Try modern approach first
-      if (window.navigator && (window.navigator as any).msSaveOrOpenBlob) {
-        // For IE/Edge
-        ;(window.navigator as any).msSaveOrOpenBlob(blob, fileName)
-      } else {
-        // For modern browsers
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement("a")
-        link.href = url
-        link.download = fileName
-        link.style.display = "none"
+      const fileName = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.pptx`
 
-        document.body.appendChild(link)
-        console.log("[v0] Link added to DOM, triggering download...")
+      // Create download link
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = fileName
+      link.style.display = "none"
 
-        link.click()
+      document.body.appendChild(link)
+      console.log("[v0] PowerPoint download link created, triggering download...")
 
-        // Cleanup immediately
-        setTimeout(() => {
-          if (document.body.contains(link)) {
-            document.body.removeChild(link)
-          }
-          URL.revokeObjectURL(url)
-          console.log("[v0] Cleanup completed")
-        }, 100)
-      }
+      link.click()
+
+      // Cleanup
+      setTimeout(() => {
+        if (document.body.contains(link)) {
+          document.body.removeChild(link)
+        }
+        URL.revokeObjectURL(url)
+        console.log("[v0] PowerPoint download cleanup completed")
+      }, 100)
 
       toast({
         title: "Downloaded!",
-        description: "Presentation has been downloaded as HTML file",
+        description: "Presentation has been downloaded as PowerPoint file",
       })
     } catch (error) {
-      console.error("[v0] Download error:", error)
+      console.error("[v0] PowerPoint export error:", error)
       toast({
-        title: "Download Failed",
+        title: "Export Failed",
         description: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
         variant: "destructive",
       })
@@ -294,7 +292,7 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
                 className="flex-1 h-12 border-green-600 text-green-600 hover:bg-green-50 bg-transparent"
               >
                 <Download className="mr-2 h-5 w-5" />
-                Download HTML
+                Export PowerPoint
               </Button>
               <Button
                 onClick={handleTextExport}
@@ -566,4 +564,212 @@ function generateSlideBySlideText(presentation: any, formData: any): string {
   textContent += `Total Slides: ${finalSlideNumber}\n`
 
   return textContent
+}
+
+function generatePowerPointHTML(presentation: any, formData: any): string {
+  const slides = presentation.slides || []
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${(formData.title || "GMDC Presentation").replace(/[<>]/g, "")}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            background: #000;
+            color: #333;
+            overflow: hidden;
+        }
+        .slide {
+            width: 1280px;
+            height: 720px;
+            background: #fff;
+            position: relative;
+            display: none;
+            padding: 60px;
+            box-sizing: border-box;
+        }
+        .slide.active { display: block; }
+        .slide-header {
+            position: absolute;
+            top: 20px;
+            left: 60px;
+            right: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .gmdc-logo {
+            font-weight: bold;
+            color: #16a34a;
+            font-size: 28px;
+        }
+        .slide-number {
+            background: #16a34a;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .title-slide {
+            background: url('/content-slide-background.png') no-repeat center center;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .slide-title {
+            font-size: 64px;
+            font-weight: bold;
+            color: #16a34a;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .slide-date {
+            font-size: 24px;
+            color: #6b7280;
+            margin-top: 20px;
+        }
+        .content-slide {
+            background: url('/content-slide-background.png') no-repeat center center;
+            background-size: cover;
+        }
+        .slide-content {
+            margin-top: 80px;
+            height: calc(100% - 140px);
+            overflow: hidden;
+        }
+        .slide-content h2 {
+            font-size: 48px;
+            color: #16a34a;
+            margin-bottom: 40px;
+            border-bottom: 4px solid #16a34a;
+            padding-bottom: 15px;
+        }
+        .slide-content h3 {
+            font-size: 32px;
+            color: #1f2937;
+            margin: 30px 0 20px 0;
+        }
+        .slide-content p, .slide-content li {
+            font-size: 24px;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        .slide-content ul {
+            padding-left: 40px;
+        }
+        .slide-content li {
+            margin-bottom: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            background: rgba(255,255,255,0.9);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            border: 1px solid #d1d5db;
+            padding: 16px;
+            text-align: left;
+            font-size: 20px;
+        }
+        th {
+            background-color: #16a34a;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Title Slide -->
+    <div class="slide title-slide active">
+        <div class="slide-header">
+            <div class="gmdc-logo">GMDC</div>
+            <div class="slide-number">1</div>
+        </div>
+        <div class="slide-title">${(formData.title || "Presentation Title").replace(/[<>]/g, "")}</div>
+        ${formData.date ? `<div class="slide-date">${formData.date}</div>` : ""}
+    </div>
+
+    ${
+      presentation.tableOfContents
+        ? `
+    <div class="slide content-slide">
+        <div class="slide-header">
+            <div class="gmdc-logo">GMDC</div>
+            <div class="slide-number">2</div>
+        </div>
+        <div class="slide-content">
+            <h2>Table of Contents</h2>
+            <ul>
+                ${presentation.tableOfContents
+                  .split("\n")
+                  .filter((item: string) => item.trim())
+                  .map((item: string, index: number) => `<li>${index + 1}. ${item.trim().replace(/[<>]/g, "")}</li>`)
+                  .join("")}
+            </ul>
+        </div>
+    </div>`
+        : ""
+    }
+
+    ${slides
+      .map(
+        (slide: any, index: number) => `
+    <div class="slide content-slide">
+        <div class="slide-header">
+            <div class="gmdc-logo">GMDC</div>
+            <div class="slide-number">${index + (presentation.tableOfContents ? 3 : 2)}</div>
+        </div>
+        <div class="slide-content">
+            <h2>${(slide.title || "").replace(/[<>]/g, "")}</h2>
+            <div>${slide.content || ""}</div>
+            ${slide.table ? `<div style="margin: 30px 0;">${slide.table}</div>` : ""}
+        </div>
+    </div>`,
+      )
+      .join("")}
+
+    <div class="slide thank-you-slide">
+        <div class="slide-header">
+            <div class="gmdc-logo" style="color: white;">GMDC</div>
+            <div class="slide-number" style="background: rgba(255,255,255,0.2);">${slides.length + (presentation.tableOfContents ? 3 : 2)}</div>
+        </div>
+        <div class="thank-you-text">THANK YOU</div>
+    </div>
+
+    <script>
+        // PowerPoint-like navigation
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        
+        function showSlide(n) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            if (slides[n]) slides[n].classList.add('active');
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                currentSlide = Math.min(currentSlide + 1, slides.length - 1);
+                showSlide(currentSlide);
+            } else if (e.key === 'ArrowLeft') {
+                currentSlide = Math.max(currentSlide - 1, 0);
+                showSlide(currentSlide);
+            }
+        });
+        
+        // Auto-print for PowerPoint conversion
+        setTimeout(() => window.print(), 1000);
+    </script>
+</body>
+</html>`
 }
