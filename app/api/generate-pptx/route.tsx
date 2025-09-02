@@ -74,12 +74,21 @@ export async function POST(request: Request) {
     // Add slides
     const createSlideXML = (slide: any, index: number) => {
       const slideId = index + 1
-      const layoutRef = index === 0 ? 1 : 2
 
       if (slide.type === "title") {
         return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
   <p:cSld>
+    <p:bg>
+      <p:bgPr>
+        <a:blipFill>
+          <a:blip r:embed="rId2"/>
+          <a:stretch>
+            <a:fillRect/>
+          </a:stretch>
+        </a:blipFill>
+      </p:bgPr>
+    </p:bg>
     <p:spTree>
       <p:nvGrpSpPr>
         <p:cNvPr id="1" name=""/>
@@ -106,18 +115,19 @@ export async function POST(request: Request) {
         </p:nvSpPr>
         <p:spPr>
           <a:xfrm>
-            <a:off x="914400" y="1828800"/>
+            <a:off x="914400" y="5486400"/>
             <a:ext cx="7315200" cy="1371600"/>
           </a:xfrm>
         </p:spPr>
         <p:txBody>
-          <a:bodyPr/>
+          <a:bodyPr anchor="ctr"/>
           <a:lstStyle/>
           <a:p>
+            <a:pPr algn="ctr"/>
             <a:r>
-              <a:rPr lang="en-US" sz="3600" b="1">
+              <a:rPr lang="en-US" sz="4400" b="1">
                 <a:solidFill>
-                  <a:srgbClr val="1F4E79"/>
+                  <a:srgbClr val="B8860B"/>
                 </a:solidFill>
               </a:rPr>
               <a:t>${slide.title || data.title}</a:t>
@@ -125,11 +135,35 @@ export async function POST(request: Request) {
           </a:p>
         </p:txBody>
       </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="3" name="Divider"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="3657600" y="6858000"/>
+            <a:ext cx="1828800" cy="91440"/>
+          </a:xfrm>
+          <a:prstGeom prst="rect">
+            <a:avLst/>
+          </a:prstGeom>
+          <a:solidFill>
+            <a:srgbClr val="B8860B"/>
+          </a:solidFill>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p/>
+        </p:txBody>
+      </p:sp>
       ${
         slide.subtitle
           ? `<p:sp>
         <p:nvSpPr>
-          <p:cNvPr id="3" name="Subtitle"/>
+          <p:cNvPr id="4" name="Subtitle"/>
           <p:cNvSpPr>
             <a:spLocks noGrp="1"/>
           </p:cNvSpPr>
@@ -139,14 +173,15 @@ export async function POST(request: Request) {
         </p:nvSpPr>
         <p:spPr>
           <a:xfrm>
-            <a:off x="914400" y="3657600"/>
+            <a:off x="914400" y="7315200"/>
             <a:ext cx="7315200" cy="914400"/>
           </a:xfrm>
         </p:spPr>
         <p:txBody>
-          <a:bodyPr/>
+          <a:bodyPr anchor="ctr"/>
           <a:lstStyle/>
           <a:p>
+            <a:pPr algn="ctr"/>
             <a:r>
               <a:rPr lang="en-US" sz="2400">
                 <a:solidFill>
@@ -160,16 +195,54 @@ export async function POST(request: Request) {
       </p:sp>`
           : ""
       }
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="5" name="Website"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="3657600" y="8686800"/>
+            <a:ext cx="1828800" cy="457200"/>
+          </a:xfrm>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:pPr algn="ctr"/>
+            <a:r>
+              <a:rPr lang="en-US" sz="1600" b="1">
+                <a:solidFill>
+                  <a:srgbClr val="666666"/>
+                </a:solidFill>
+              </a:rPr>
+              <a:t>www.gmdcltd.com</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
     </p:spTree>
   </p:cSld>
   <p:clrMapOvr>
     <a:masterClrMapping/>
   </p:clrMapOvr>
 </p:sld>`
-      } else {
+      } else if (slide.type === "thank-you" || slideId === data.slides?.length) {
         return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
   <p:cSld>
+    <p:bg>
+      <p:bgPr>
+        <a:blipFill>
+          <a:blip r:embed="rId3"/>
+          <a:stretch>
+            <a:fillRect/>
+          </a:stretch>
+        </a:blipFill>
+      </p:bgPr>
+    </p:bg>
     <p:spTree>
       <p:nvGrpSpPr>
         <p:cNvPr id="1" name=""/>
@@ -186,18 +259,14 @@ export async function POST(request: Request) {
       </p:grpSpPr>
       <p:sp>
         <p:nvSpPr>
-          <p:cNvPr id="2" name="Title"/>
-          <p:cNvSpPr>
-            <a:spLocks noGrp="1"/>
-          </p:cNvSpPr>
-          <p:nvPr>
-            <p:ph type="title"/>
-          </p:nvPr>
+          <p:cNvPr id="2" name="GMDC Logo"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
         </p:nvSpPr>
         <p:spPr>
           <a:xfrm>
-            <a:off x="457200" y="274320"/>
-            <a:ext cx="8229600" cy="1143000"/>
+            <a:off x="457200" y="457200"/>
+            <a:ext cx="914400" cy="914400"/>
           </a:xfrm>
         </p:spPr>
         <p:txBody>
@@ -205,7 +274,451 @@ export async function POST(request: Request) {
           <a:lstStyle/>
           <a:p>
             <a:r>
+              <a:rPr lang="en-US" sz="1400">
+                <a:solidFill>
+                  <a:srgbClr val="666666"/>
+                </a:solidFill>
+              </a:rPr>
+              <a:t>GMDC</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="3" name="Website"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="7315200" y="457200"/>
+            <a:ext cx="1371600" cy="457200"/>
+          </a:xfrm>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:pPr algn="r"/>
+            <a:r>
+              <a:rPr lang="en-US" sz="1400">
+                <a:solidFill>
+                  <a:srgbClr val="666666"/>
+                </a:solidFill>
+              </a:rPr>
+              <a:t>www.gmdcltd.com</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="4" name="Thank You"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="1828800" y="4114800"/>
+            <a:ext cx="5486400" cy="1828800"/>
+          </a:xfrm>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr anchor="ctr"/>
+          <a:lstStyle/>
+          <a:p>
+            <a:pPr algn="ctr"/>
+            <a:r>
+              <a:rPr lang="en-US" sz="6600" b="1">
+                <a:solidFill>
+                  <a:srgbClr val="B8860B"/>
+                </a:solidFill>
+              </a:rPr>
+              <a:t>THANK YOU</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="5" name="Divider"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="3657600" y="5943600"/>
+            <a:ext cx="1828800" cy="91440"/>
+          </a:xfrm>
+          <a:prstGeom prst="rect">
+            <a:avLst/>
+          </a:prstGeom>
+          <a:solidFill>
+            <a:srgbClr val="B8860B"/>
+          </a:solidFill>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p/>
+        </p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="6" name="Slide Number"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="8229600" y="8686800"/>
+            <a:ext cx="457200" cy="457200"/>
+          </a:xfrm>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:pPr algn="r"/>
+            <a:r>
+              <a:rPr lang="en-US" sz="1400">
+                <a:solidFill>
+                  <a:srgbClr val="666666"/>
+                </a:solidFill>
+              </a:rPr>
+              <a:t>${slideId}</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>
+  </p:cSld>
+  <p:clrMapOvr>
+    <a:masterClrMapping/>
+  </p:clrMapOvr>
+</p:sld>`
+      } else if (slide.type === "table-of-contents") {
+        let contentItems = ""
+        if (slide.items && Array.isArray(slide.items)) {
+          if (slide.items.length > 10) {
+            // Two column layout
+            const midPoint = Math.ceil(slide.items.length / 2)
+            const leftItems = slide.items.slice(0, midPoint)
+            const rightItems = slide.items.slice(midPoint)
+
+            contentItems =
+              leftItems
+                .map((item: string, index: number) => `${index + 1}. ${item.replace(/^\d+\.\s*/, "")}`)
+                .join("\n") +
+              "\n\n" +
+              rightItems
+                .map((item: string, index: number) => `${index + midPoint + 1}. ${item.replace(/^\d+\.\s*/, "")}`)
+                .join("\n")
+          } else {
+            // Single column layout
+            contentItems = slide.items
+              .slice(0, 12)
+              .map((item: string, index: number) => `${index + 1}. ${item.replace(/^\d+\.\s*/, "")}`)
+              .join("\n")
+          }
+        }
+
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:cSld>
+    <p:bg>
+      <p:bgPr>
+        <a:blipFill>
+          <a:blip r:embed="rId3"/>
+          <a:stretch>
+            <a:fillRect/>
+          </a:stretch>
+        </a:blipFill>
+      </p:bgPr>
+    </p:bg>
+    <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/>
+        <p:cNvGrpSpPr/>
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr>
+        <a:xfrm>
+          <a:off x="0" y="0"/>
+          <a:ext cx="0" cy="0"/>
+          <a:chOff x="0" y="0"/>
+          <a:chExt cx="0" cy="0"/>
+        </a:xfrm>
+      </p:grpSpPr>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="2" name="GMDC Logo"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="457200" y="457200"/>
+            <a:ext cx="914400" cy="914400"/>
+          </a:xfrm>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:r>
+              <a:rPr lang="en-US" sz="1400">
+                <a:solidFill>
+                  <a:srgbClr val="666666"/>
+                </a:solidFill>
+              </a:rPr>
+              <a:t>GMDC</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="3" name="Website"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="7315200" y="457200"/>
+            <a:ext cx="1371600" cy="457200"/>
+          </a:xfrm>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:pPr algn="r"/>
+            <a:r>
+              <a:rPr lang="en-US" sz="1400">
+                <a:solidFill>
+                  <a:srgbClr val="666666"/>
+                </a:solidFill>
+              </a:rPr>
+              <a:t>www.gmdcltd.com</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="4" name="Title"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="914400" y="1371600"/>
+            <a:ext cx="7315200" cy="914400"/>
+          </a:xfrm>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr anchor="ctr"/>
+          <a:lstStyle/>
+          <a:p>
+            <a:pPr algn="ctr"/>
+            <a:r>
               <a:rPr lang="en-US" sz="2800" b="1">
+                <a:solidFill>
+                  <a:srgbClr val="1F4E79"/>
+                </a:solidFill>
+              </a:rPr>
+              <a:t>Table of Content</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="5" name="Content"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="914400" y="2286000"/>
+            <a:ext cx="7315200" cy="5486400"/>
+          </a:xfrm>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:r>
+              <a:rPr lang="en-US" sz="1800">
+                <a:solidFill>
+                  <a:srgbClr val="333333"/>
+                </a:solidFill>
+              </a:rPr>
+              <a:t>${contentItems}</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="6" name="Slide Number"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="8229600" y="8686800"/>
+            <a:ext cx="457200" cy="457200"/>
+          </a:xfrm>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:pPr algn="r"/>
+            <a:r>
+              <a:rPr lang="en-US" sz="1400">
+                <a:solidFill>
+                  <a:srgbClr val="666666"/>
+                </a:solidFill>
+              </a:rPr>
+              <a:t>${slideId}</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>
+  </p:cSld>
+  <p:clrMapOvr>
+    <a:masterClrMapping/>
+  </p:clrMapOvr>
+</p:sld>`
+      } else {
+        let contentText = ""
+        if (Array.isArray(slide.content)) {
+          if (slide.content.length > 12) {
+            // Two column layout with bullet points
+            const midPoint = Math.ceil(slide.content.length / 2)
+            const leftItems = slide.content.slice(0, Math.min(8, midPoint))
+            const rightItems = slide.content.slice(midPoint, Math.min(16, slide.content.length))
+
+            contentText =
+              leftItems.map((item: string) => `➢ ${item}`).join("\n") +
+              "\n\n" +
+              rightItems.map((item: string) => `➢ ${item}`).join("\n")
+          } else {
+            // Single column with bullet points
+            contentText = slide.content
+              .slice(0, 10)
+              .map((item: string) => `➢ ${item}`)
+              .join("\n")
+          }
+        } else if (typeof slide.content === "string") {
+          contentText = slide.content.length > 1000 ? slide.content.substring(0, 1000) + "..." : slide.content
+        }
+
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:cSld>
+    <p:bg>
+      <p:bgPr>
+        <a:blipFill>
+          <a:blip r:embed="rId3"/>
+          <a:stretch>
+            <a:fillRect/>
+          </a:stretch>
+        </a:blipFill>
+      </p:bgPr>
+    </p:bg>
+    <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/>
+        <p:cNvGrpSpPr/>
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr>
+        <a:xfrm>
+          <a:off x="0" y="0"/>
+          <a:ext cx="0" cy="0"/>
+          <a:chOff x="0" y="0"/>
+          <a:chExt cx="0" cy="0"/>
+        </a:xfrm>
+      </p:grpSpPr>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="2" name="GMDC Logo"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="457200" y="182880"/>
+            <a:ext cx="914400" cy="914400"/>
+          </a:xfrm>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:r>
+              <a:rPr lang="en-US" sz="1400">
+                <a:solidFill>
+                  <a:srgbClr val="666666"/>
+                </a:solidFill>
+              </a:rPr>
+              <a:t>GMDC</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="3" name="Website"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="7315200" y="182880"/>
+            <a:ext cx="1371600" cy="457200"/>
+          </a:xfrm>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:pPr algn="r"/>
+            <a:r>
+              <a:rPr lang="en-US" sz="1400">
+                <a:solidFill>
+                  <a:srgbClr val="666666"/>
+                </a:solidFill>
+              </a:rPr>
+              <a:t>www.gmdcltd.com</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="4" name="Title"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="457200" y="1188720"/>
+            <a:ext cx="6400800" cy="914400"/>
+          </a:xfrm>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:r>
+              <a:rPr lang="en-US" sz="2400" b="1">
                 <a:solidFill>
                   <a:srgbClr val="1F4E79"/>
                 </a:solidFill>
@@ -215,20 +728,47 @@ export async function POST(request: Request) {
           </a:p>
         </p:txBody>
       </p:sp>
-      <p:sp>
+      ${
+        slide.subtitle
+          ? `<p:sp>
         <p:nvSpPr>
-          <p:cNvPr id="3" name="Content"/>
-          <p:cNvSpPr>
-            <a:spLocks noGrp="1"/>
-          </p:cNvSpPr>
-          <p:nvPr>
-            <p:ph idx="1"/>
-          </p:nvPr>
+          <p:cNvPr id="5" name="Subtitle"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
         </p:nvSpPr>
         <p:spPr>
           <a:xfrm>
-            <a:off x="457200" y="1600200"/>
-            <a:ext cx="8229600" cy="4525963"/>
+            <a:off x="457200" y="2103120"/>
+            <a:ext cx="6400800" cy="457200"/>
+          </a:xfrm>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:r>
+              <a:rPr lang="en-US" sz="1800">
+                <a:solidFill>
+                  <a:srgbClr val="666666"/>
+                </a:solidFill>
+              </a:rPr>
+              <a:t>${slide.subtitle}</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>`
+          : ""
+      }
+      <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="6" name="Content"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="182880" y="${slide.subtitle ? "2743200" : "2286000"}"/>
+            <a:ext cx="8686800" cy="${slide.subtitle ? "4800600" : "5257800"}"/>
           </a:xfrm>
         </p:spPr>
         <p:txBody>
@@ -241,24 +781,20 @@ export async function POST(request: Request) {
                   <a:srgbClr val="333333"/>
                 </a:solidFill>
               </a:rPr>
-              <a:t>${slide.content || ""}</a:t>
+              <a:t>${contentText}</a:t>
             </a:r>
           </a:p>
         </p:txBody>
       </p:sp>
-      ${
-        index > 0
-          ? `<p:sp>
+      <p:sp>
         <p:nvSpPr>
-          <p:cNvPr id="4" name="Slide Number"/>
-          <p:cNvSpPr>
-            <a:spLocks noGrp="1"/>
-          </p:cNvSpPr>
+          <p:cNvPr id="7" name="Slide Number"/>
+          <p:cNvSpPr/>
           <p:nvPr/>
         </p:nvSpPr>
         <p:spPr>
           <a:xfrm>
-            <a:off x="8229600" y="6858000"/>
+            <a:off x="8229600" y="8686800"/>
             <a:ext cx="457200" cy="457200"/>
           </a:xfrm>
         </p:spPr>
@@ -266,8 +802,9 @@ export async function POST(request: Request) {
           <a:bodyPr/>
           <a:lstStyle/>
           <a:p>
+            <a:pPr algn="r"/>
             <a:r>
-              <a:rPr lang="en-US" sz="1200">
+              <a:rPr lang="en-US" sz="1400">
                 <a:solidFill>
                   <a:srgbClr val="666666"/>
                 </a:solidFill>
@@ -276,9 +813,7 @@ export async function POST(request: Request) {
             </a:r>
           </a:p>
         </p:txBody>
-      </p:sp>`
-          : ""
-      }
+      </p:sp>
     </p:spTree>
   </p:cSld>
   <p:clrMapOvr>
@@ -288,20 +823,36 @@ export async function POST(request: Request) {
       }
     }
 
-    // Add slides with proper structure
     data.slides?.forEach((slide: any, index: number) => {
-      zip.file(`ppt/slides/slide${index + 1}.xml`, createSlideXML(slide, index))
+      const slideId = index + 1
+      let relationships = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout${slide.type === "title" ? "1" : "2"}.xml"/>`
+
+      if (slide.type === "title") {
+        relationships += `
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/title-background.jpg"/>`
+      } else {
+        relationships += `
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/content-background.png"/>`
+      }
+
+      relationships += `
+</Relationships>`
+
+      zip.file(`ppt/slides/_rels/slide${slideId}.xml.rels`, relationships)
     })
 
-    data.slides?.forEach((_: any, index: number) => {
-      zip.file(
-        `ppt/slides/_rels/slide${index + 1}.xml.rels`,
-        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout${index === 0 ? "1" : "2"}.xml"/>
-</Relationships>`,
-      )
-    })
+    zip.file(
+      "ppt/media/title-background.jpg",
+      "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+      { base64: true },
+    )
+    zip.file(
+      "ppt/media/content-background.png",
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
+      { base64: true },
+    )
 
     zip.file(
       "ppt/presentation.xml",
