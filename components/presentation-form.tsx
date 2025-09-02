@@ -99,49 +99,7 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
     }
 
     try {
-      console.log("[v0] Generating PowerPoint presentation...")
-
-      const response = await fetch("/api/export-powerpoint", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          presentation: generatedPresentation,
-          formData: formData,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to generate PowerPoint")
-      }
-
-      // Download the PowerPoint file
-      const blob = await response.blob()
-      const fileName = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.pptx`
-
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = url
-      link.download = fileName
-      link.style.display = "none"
-
-      document.body.appendChild(link)
-      link.click()
-
-      setTimeout(() => {
-        if (document.body.contains(link)) {
-          document.body.removeChild(link)
-        }
-        URL.revokeObjectURL(url)
-      }, 100)
-
-      toast({
-        title: "PowerPoint Downloaded!",
-        description: "Your presentation has been saved as a .pptx file",
-      })
-    } catch (error) {
-      console.error("[v0] PowerPoint generation error:", error)
+      console.log("[v0] Generating HTML presentation...")
 
       const htmlContent = generatePresentationHTML(generatedPresentation, formData)
       const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" })
@@ -164,8 +122,14 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
       }, 100)
 
       toast({
-        title: "HTML Downloaded (Fallback)",
-        description: "PowerPoint generation failed. Downloaded as HTML instead.",
+        title: "Presentation Downloaded!",
+        description: "Your presentation has been saved as an HTML file. You can print it as PDF from your browser.",
+      })
+    } catch (error) {
+      console.error("[v0] HTML generation error:", error)
+      toast({
+        title: "Download Failed",
+        description: "There was an error generating your presentation",
         variant: "destructive",
       })
     }
@@ -316,7 +280,7 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
                 className="flex-1 h-12 border-green-600 text-green-600 hover:bg-green-50 bg-transparent"
               >
                 <Download className="mr-2 h-5 w-5" />
-                Export PowerPoint
+                Export HTML
               </Button>
               <Button
                 onClick={handleTextExport}
