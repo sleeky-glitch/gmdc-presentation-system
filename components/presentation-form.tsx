@@ -101,16 +101,15 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
     try {
       console.log("[v0] Creating PowerPoint presentation...")
 
-      // Create a simple PowerPoint-like HTML structure optimized for conversion
       const pptxContent = generatePowerPointHTML(generatedPresentation, formData)
       console.log("[v0] PowerPoint HTML content generated")
 
       const blob = new Blob([pptxContent], {
-        type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        type: "text/html",
       })
       console.log("[v0] Blob created for PowerPoint")
 
-      const fileName = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.pptx`
+      const fileName = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.html`
 
       // Create download link
       const url = URL.createObjectURL(blob)
@@ -135,7 +134,7 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
 
       toast({
         title: "Downloaded!",
-        description: "Presentation has been downloaded as PowerPoint file",
+        description: "Presentation has been downloaded. Open in browser and print as PDF or convert to PowerPoint.",
       })
     } catch (error) {
       console.error("[v0] PowerPoint export error:", error)
@@ -286,13 +285,9 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
                 <Eye className="mr-2 h-5 w-5" />
                 Preview Presentation
               </Button>
-              <Button
-                onClick={handleDownload}
-                variant="outline"
-                className="flex-1 h-12 border-green-600 text-green-600 hover:bg-green-50 bg-transparent"
-              >
+              <Button onClick={handleDownload} className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white">
                 <Download className="mr-2 h-5 w-5" />
-                Export PowerPoint
+                Export PPTX
               </Button>
               <Button
                 onClick={handleTextExport}
