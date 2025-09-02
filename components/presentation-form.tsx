@@ -103,17 +103,27 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
       const htmlContent = generatePresentationHTML(generatedPresentation, formData)
       console.log("[v0] HTML content generated, length:", htmlContent.length)
 
-      const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" })
-      console.log("[v0] Blob created, size:", blob.size)
+      const printWindow = window.open("", "_blank")
+      if (printWindow) {
+        printWindow.document.write(htmlContent)
+        printWindow.document.close()
 
-      const fileName = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.html`
+        // Wait for content to load, then trigger print dialog
+        printWindow.onload = () => {
+          setTimeout(() => {
+            printWindow.print()
+          }, 500)
+        }
 
-      // Try modern approach first
-      if (window.navigator && (window.navigator as any).msSaveOrOpenBlob) {
-        // For IE/Edge
-        ;(window.navigator as any).msSaveOrOpenBlob(blob, fileName)
+        toast({
+          title: "PDF Export Ready!",
+          description: "A new window opened. Use Ctrl+P or Cmd+P to save as PDF",
+        })
       } else {
-        // For modern browsers
+        // Fallback to HTML download if popup blocked
+        const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" })
+        const fileName = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.html`
+
         const url = URL.createObjectURL(blob)
         const link = document.createElement("a")
         link.href = url
@@ -121,24 +131,20 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
         link.style.display = "none"
 
         document.body.appendChild(link)
-        console.log("[v0] Link added to DOM, triggering download...")
-
         link.click()
 
-        // Cleanup immediately
         setTimeout(() => {
           if (document.body.contains(link)) {
             document.body.removeChild(link)
           }
           URL.revokeObjectURL(url)
-          console.log("[v0] Cleanup completed")
         }, 100)
-      }
 
-      toast({
-        title: "Downloaded!",
-        description: "Presentation has been downloaded as HTML file",
-      })
+        toast({
+          title: "HTML Downloaded!",
+          description: "Presentation downloaded as HTML. Open and print to PDF",
+        })
+      }
     } catch (error) {
       console.error("[v0] Download error:", error)
       toast({
@@ -294,7 +300,7 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
                 className="flex-1 h-12 border-green-600 text-green-600 hover:bg-green-50 bg-transparent"
               >
                 <Download className="mr-2 h-5 w-5" />
-                Download HTML
+                Export PDF
               </Button>
               <Button
                 onClick={handleTextExport}
@@ -326,125 +332,115 @@ function generatePresentationHTML(presentation: any, formData: any): string {
         body {
             font-family: 'Arial', 'Helvetica', sans-serif;
             margin: 0;
-            padding: 20px;
-            background: #f5f5f5;
+            padding: 0;
+            background: white;
             color: #333;
         }
-        .presentation-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            overflow: hidden;
-        }
         .slide {
-            width: 100%;
-            min-height: 600px;
-            padding: 40px;
-            border-bottom: 2px solid #e5e7eb;
+            width: 210mm;
+            height: 297mm;
+            padding: 20mm;
+            margin: 0;
             page-break-after: always;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            /* Added background image for content slides */
+            background-image: url('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-KKzuc0o3AdSKVw2TJMYYwRhJi9QsGD.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            display: flex;
+            flex-direction: column;
         }
-        .slide:last-child { border-bottom: none; }
+        .slide.title-slide {
+            background-image: url('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Main%20Slide.jpg-zFK4QxoegV9krsPbigcwKDu936VkkA.jpeg');
+        }
+        .slide.thank-you-slide {
+            background-image: url('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Main%20Slide.jpg-zFK4QxoegV9krsPbigcwKDu936VkkA.jpeg');
+        }
         .slide-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 3px solid #16a34a;
+            margin-bottom: 20px;
+            flex-shrink: 0;
         }
         .gmdc-logo {
-            font-weight: bold;
-            color: #16a34a;
-            font-size: 24px;
+            height: 40px;
         }
         .slide-number {
-            background: #16a34a;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
+            background: rgba(0,0,0,0.1);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
         }
         .slide-title {
-            font-size: 42px;
+            font-size: 36px;
             font-weight: bold;
-            color: #16a34a;
+            color: #8B4513;
             text-align: center;
-            margin: 60px 0;
+            margin: 40px 0;
+            text-decoration: underline;
+            text-decoration-color: #D2691E;
+        }
+        .slide-content {
+            flex: 1;
+            overflow: hidden;
         }
         .slide-content h2 {
-            font-size: 32px;
-            color: #16a34a;
-            margin-bottom: 25px;
-            border-bottom: 2px solid #16a34a;
-            padding-bottom: 10px;
-        }
-        .slide-content h3 {
-            font-size: 24px;
-            color: #1f2937;
-            margin: 20px 0 15px 0;
-        }
-        .slide-content p, .slide-content li {
-            font-size: 18px;
-            line-height: 1.6;
-            margin-bottom: 12px;
-        }
-        .slide-content ul {
-            padding-left: 25px;
-        }
-        .slide-content li {
-            margin-bottom: 8px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background: white;
-        }
-        th, td {
-            border: 1px solid #d1d5db;
-            padding: 12px;
-            text-align: left;
-        }
-        th {
-            background-color: #16a34a;
-            color: white;
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 20px;
             font-weight: bold;
         }
-        .thank-you-slide {
-            background: linear-gradient(135deg, #16a34a, #22c55e);
-            color: white;
+        .slide-content ul {
+            list-style: none;
+            padding: 0;
+        }
+        .slide-content li {
+            font-size: 16px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .slide-content li:before {
+            content: "➢";
+            color: #4169E1;
+            position: absolute;
+            left: 0;
+        }
+        .thank-you-content {
             display: flex;
             align-items: center;
             justify-content: center;
-            text-align: center;
-        }
-        .thank-you-text {
-            font-size: 64px;
+            height: 100%;
+            font-size: 48px;
             font-weight: bold;
+            color: #8B4513;
+            text-decoration: underline;
+            text-decoration-color: #D2691E;
         }
         @media print {
-            body { background: white; padding: 0; }
             .slide { 
-                min-height: 90vh; 
                 page-break-after: always;
-                margin-bottom: 0;
+                margin: 0;
+                width: 100%;
+                height: 100vh;
             }
         }
     </style>
 </head>
 <body>
-    <div class="presentation-container">
-        <!-- Title Slide -->
-        <div class="slide">
-            <div class="slide-header">
-                <div class="gmdc-logo">GMDC</div>
-                <div class="slide-number">1</div>
+         Title Slide 
+        <div class="slide title-slide">
+            <div style="position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); text-align: center;">
+                <div class="slide-title">${(formData.title || "Presentation Title").replace(/[<>]/g, "")}</div>
+                ${formData.date ? `<div style="font-size: 18px; color: #666; margin-top: 20px;">${formData.date}</div>` : ""}
             </div>
-            <div class="slide-title">${(formData.title || "Presentation Title").replace(/[<>]/g, "")}</div>
-            ${formData.date ? `<div style="text-align: center; font-size: 20px; color: #6b7280; margin-top: 20px;">${formData.date}</div>` : ""}
+            <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 14px; color: #666;">
+                www.gmdcltd.com
+            </div>
+            <div style="position: absolute; bottom: 10px; left: 20px; font-size: 12px; color: #666;">1</div>
         </div>
 
         ${
@@ -452,11 +448,11 @@ function generatePresentationHTML(presentation: any, formData: any): string {
             ? `
         <div class="slide">
             <div class="slide-header">
-                <div class="gmdc-logo">GMDC</div>
-                <div class="slide-number">2</div>
+                <img src="https://www.gmdcltd.com/assets/img/logo.jpg" alt="GMDC Logo" class="gmdc-logo" />
+                <div style="font-size: 14px; color: #666;">www.gmdcltd.com</div>
             </div>
             <div class="slide-content">
-                <h2>Table of Contents</h2>
+                <h2>Table of Content</h2>
                 <ul>
                     ${presentation.tableOfContents
                       .split("\n")
@@ -467,6 +463,7 @@ function generatePresentationHTML(presentation: any, formData: any): string {
                       .join("")}
                 </ul>
             </div>
+            <div style="position: absolute; bottom: 10px; right: 20px; font-size: 12px; color: #666;">2</div>
         </div>`
             : ""
         }
@@ -476,28 +473,24 @@ function generatePresentationHTML(presentation: any, formData: any): string {
             (slide: any, index: number) => `
         <div class="slide">
             <div class="slide-header">
-                <div class="gmdc-logo">GMDC</div>
-                <div class="slide-number">${index + (presentation.tableOfContents ? 3 : 2)}</div>
+                <img src="https://www.gmdcltd.com/assets/img/logo.jpg" alt="GMDC Logo" class="gmdc-logo" />
+                <div style="font-size: 14px; color: #666;">www.gmdcltd.com</div>
             </div>
             <div class="slide-content">
                 <h2>${(slide.title || "").replace(/[<>]/g, "")}</h2>
                 <div>${slide.content || ""}</div>
-                ${slide.table ? `<div style="margin: 20px 0;">${slide.table}</div>` : ""}
             </div>
+            <div style="position: absolute; bottom: 10px; right: 20px; font-size: 12px; color: #666;">${index + (presentation.tableOfContents ? 3 : 2)}</div>
         </div>`,
           )
           .join("")}
 
         <div class="slide thank-you-slide">
-            <div style="position: absolute; top: 40px; left: 40px; right: 40px;">
-                <div class="slide-header" style="border-bottom: 3px solid white;">
-                    <div class="gmdc-logo" style="color: white;">GMDC</div>
-                    <div class="slide-number" style="background: rgba(255,255,255,0.2);">${slides.length + (presentation.tableOfContents ? 3 : 2)}</div>
-                </div>
+            <div class="thank-you-content" style="margin-top: 10px;">
+                THANK YOU
             </div>
-            <div class="thank-you-text">THANK YOU</div>
+            <div style="position: absolute; bottom: 10px; right: 20px; font-size: 12px; color: #666;">${slides.length + (presentation.tableOfContents ? 3 : 2)}</div>
         </div>
-    </div>
 </body>
 </html>`
 }
