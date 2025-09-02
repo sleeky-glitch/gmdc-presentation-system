@@ -86,7 +86,7 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
     }
   }
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     console.log("[v0] Download button clicked")
     if (!generatedPresentation) {
       console.log("[v0] No generated presentation found")
@@ -99,37 +99,57 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
     }
 
     try {
-      console.log("[v0] Generating HTML presentation...")
-
+      console.log("[v0] Generating HTML content...")
       const htmlContent = generatePresentationHTML(generatedPresentation, formData)
-      const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" })
-      const fileName = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.html`
+      console.log("[v0] HTML content generated, length:", htmlContent.length)
 
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = url
-      link.download = fileName
-      link.style.display = "none"
+      const printWindow = window.open("", "_blank")
+      if (printWindow) {
+        printWindow.document.write(htmlContent)
+        printWindow.document.close()
 
-      document.body.appendChild(link)
-      link.click()
-
-      setTimeout(() => {
-        if (document.body.contains(link)) {
-          document.body.removeChild(link)
+        // Wait for content to load, then trigger print dialog
+        printWindow.onload = () => {
+          setTimeout(() => {
+            printWindow.print()
+          }, 500)
         }
-        URL.revokeObjectURL(url)
-      }, 100)
 
-      toast({
-        title: "Presentation Downloaded!",
-        description: "Your presentation has been saved as an HTML file. You can print it as PDF from your browser.",
-      })
+        toast({
+          title: "PDF Export Ready!",
+          description: "A new window opened. Use Ctrl+P or Cmd+P to save as PDF",
+        })
+      } else {
+        // Fallback to HTML download if popup blocked
+        const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" })
+        const fileName = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.html`
+
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement("a")
+        link.href = url
+        link.download = fileName
+        link.style.display = "none"
+
+        document.body.appendChild(link)
+        link.click()
+
+        setTimeout(() => {
+          if (document.body.contains(link)) {
+            document.body.removeChild(link)
+          }
+          URL.revokeObjectURL(url)
+        }, 100)
+
+        toast({
+          title: "HTML Downloaded!",
+          description: "Presentation downloaded as HTML. Open and print to PDF",
+        })
+      }
     } catch (error) {
-      console.error("[v0] HTML generation error:", error)
+      console.error("[v0] Download error:", error)
       toast({
         title: "Download Failed",
-        description: "There was an error generating your presentation",
+        description: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
         variant: "destructive",
       })
     }
@@ -280,7 +300,7 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
                 className="flex-1 h-12 border-green-600 text-green-600 hover:bg-green-50 bg-transparent"
               >
                 <Download className="mr-2 h-5 w-5" />
-                Export HTML
+                Export PDF
               </Button>
               <Button
                 onClick={handleTextExport}
