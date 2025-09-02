@@ -158,7 +158,6 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-gray-700 font-semibold tracking-wider">
           www.gmdcltd.com
         </div>
-        <div className="absolute bottom-4 left-4 text-sm text-gray-600">{slideNumber}</div>
       </div>
     )
   }
@@ -215,7 +214,7 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
                   {slide.items.slice(0, Math.ceil(slide.items.length / 2)).map((item: string, index: number) => (
                     <div key={index} className="flex items-start text-base">
                       <span className="font-semibold text-blue-600 mr-3 flex-shrink-0">{index + 1}.</span>
-                      <span className="text-gray-800 break-words leading-relaxed">{item}</span>
+                      <span className="text-gray-800 break-words leading-relaxed">{item.replace(/^\d+\.\s*/, "")}</span>
                     </div>
                   ))}
                 </div>
@@ -225,7 +224,7 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
                       <span className="font-semibold text-blue-600 mr-3 flex-shrink-0">
                         {index + Math.ceil(slide.items.length / 2) + 1}.
                       </span>
-                      <span className="text-gray-800 break-words leading-relaxed">{item}</span>
+                      <span className="text-gray-800 break-words leading-relaxed">{item.replace(/^\d+\.\s*/, "")}</span>
                     </div>
                   ))}
                 </div>
@@ -236,7 +235,7 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
                   slide.items.slice(0, 12).map((item: string, index: number) => (
                     <div key={index} className="flex items-start text-lg">
                       <span className="font-semibold text-blue-600 mr-4 flex-shrink-0">{index + 1}.</span>
-                      <span className="text-gray-800 break-words leading-relaxed">{item}</span>
+                      <span className="text-gray-800 break-words leading-relaxed">{item.replace(/^\d+\.\s*/, "")}</span>
                     </div>
                   ))}
                 {slide.items && slide.items.length > 12 && (

@@ -87,7 +87,7 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
   }
 
   const handleDownload = async () => {
-    console.log("[v0] PowerPoint export button clicked")
+    console.log("[v0] PPTX export button clicked")
     if (!generatedPresentation) {
       console.log("[v0] No generated presentation found")
       toast({
@@ -99,17 +99,17 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
     }
 
     try {
-      console.log("[v0] Creating PowerPoint presentation...")
+      console.log("[v0] Creating PPTX presentation...")
 
       const pptxContent = generatePowerPointHTML(generatedPresentation, formData)
-      console.log("[v0] PowerPoint HTML content generated")
+      console.log("[v0] PPTX HTML content generated")
 
       const blob = new Blob([pptxContent], {
-        type: "text/html",
+        type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
       })
-      console.log("[v0] Blob created for PowerPoint")
+      console.log("[v0] PPTX Blob created")
 
-      const fileName = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.html`
+      const fileName = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.pptx`
 
       // Create download link
       const url = URL.createObjectURL(blob)
@@ -119,7 +119,7 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
       link.style.display = "none"
 
       document.body.appendChild(link)
-      console.log("[v0] PowerPoint download link created, triggering download...")
+      console.log("[v0] PPTX download link created, triggering download...")
 
       link.click()
 
@@ -129,41 +129,21 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
           document.body.removeChild(link)
         }
         URL.revokeObjectURL(url)
-        console.log("[v0] PowerPoint download cleanup completed")
+        console.log("[v0] PPTX download cleanup completed")
       }, 100)
 
       toast({
         title: "Downloaded!",
-        description: "Presentation has been downloaded. Open in browser and print as PDF or convert to PowerPoint.",
+        description: "PowerPoint presentation has been downloaded successfully.",
       })
     } catch (error) {
-      console.error("[v0] PowerPoint export error:", error)
+      console.error("[v0] PPTX export error:", error)
       toast({
         title: "Export Failed",
         description: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
         variant: "destructive",
       })
     }
-  }
-
-  const handleTextExport = () => {
-    if (!generatedPresentation) return
-
-    const textContent = generateSlideBySlideText(generatedPresentation, formData)
-    const dataBlob = new Blob([textContent], { type: "text/plain" })
-    const url = URL.createObjectURL(dataBlob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = `${formData.title || "GMDC-Presentation"}-slides.txt`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-
-    toast({
-      title: "Text Exported!",
-      description: "Slide content has been downloaded as text file",
-    })
   }
 
   const handlePreview = () => {
@@ -288,14 +268,6 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
               <Button onClick={handleDownload} className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white">
                 <Download className="mr-2 h-5 w-5" />
                 Export PPTX
-              </Button>
-              <Button
-                onClick={handleTextExport}
-                variant="outline"
-                className="flex-1 h-12 border-green-600 text-green-600 hover:bg-green-50 bg-transparent"
-              >
-                <FileText className="mr-2 h-5 w-5" />
-                Export Text
               </Button>
             </div>
           )}
@@ -495,72 +467,6 @@ function generatePresentationHTML(presentation: any, formData: any): string {
 </html>`
 }
 
-function generateSlideBySlideText(presentation: any, formData: any): string {
-  const slides = presentation.slides || []
-  let textContent = ""
-
-  // Title slide
-  textContent += `SLIDE 1: TITLE SLIDE\n`
-  textContent += `Title: ${formData.title || "Presentation Title"}\n`
-  if (formData.date) {
-    textContent += `Date: ${formData.date}\n`
-  }
-  textContent += `\n${"=".repeat(50)}\n\n`
-
-  // Table of Contents
-  if (presentation.tableOfContents) {
-    textContent += `SLIDE 2: TABLE OF CONTENTS\n`
-    textContent += `Table of Content:\n`
-    presentation.tableOfContents.split("\n").forEach((item: string, index: number) => {
-      if (item.trim()) {
-        textContent += `${index + 1}. ${item.trim()}\n`
-      }
-    })
-    textContent += `\n${"=".repeat(50)}\n\n`
-  }
-
-  // Content slides
-  slides.forEach((slide: any, index: number) => {
-    const slideNumber = index + (presentation.tableOfContents ? 3 : 2)
-    textContent += `SLIDE ${slideNumber}: ${slide.title.toUpperCase()}\n`
-    textContent += `Title: ${slide.title}\n\n`
-
-    // Extract text content from HTML
-    const tempDiv = document.createElement("div")
-    tempDiv.innerHTML = slide.content
-    const plainText = tempDiv.textContent || tempDiv.innerText || ""
-    textContent += `Content:\n${plainText}\n`
-
-    if (slide.chart) {
-      textContent += `\nChart: ${slide.chart.type}\n`
-      if (slide.chart.data) {
-        textContent += `Chart Data: ${JSON.stringify(slide.chart.data, null, 2)}\n`
-      }
-    }
-
-    if (slide.table) {
-      textContent += `\nTable Data:\n`
-      const tempTableDiv = document.createElement("div")
-      tempTableDiv.innerHTML = slide.table
-      const tableText = tempTableDiv.textContent || tempTableDiv.innerText || ""
-      textContent += `${tableText}\n`
-    }
-
-    textContent += `\n${"=".repeat(50)}\n\n`
-  })
-
-  // Thank you slide
-  const finalSlideNumber = slides.length + (presentation.tableOfContents ? 3 : 2)
-  textContent += `SLIDE ${finalSlideNumber}: THANK YOU SLIDE\n`
-  textContent += `Content: THANK YOU\n`
-  textContent += `\n${"=".repeat(50)}\n\n`
-
-  textContent += `Generated on: ${new Date().toLocaleString()}\n`
-  textContent += `Total Slides: ${finalSlideNumber}\n`
-
-  return textContent
-}
-
 function generatePowerPointHTML(presentation: any, formData: any): string {
   const slides = presentation.slides || []
 
@@ -578,14 +484,23 @@ function generatePowerPointHTML(presentation: any, formData: any): string {
             color: #333;
             overflow: hidden;
         }
+        .presentation-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
         .slide {
             width: 1280px;
             height: 720px;
             background: #fff;
-            position: relative;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             display: none;
             padding: 60px;
             box-sizing: border-box;
+            border: 1px solid #ddd;
         }
         .slide.active { display: block; }
         .slide-header {
@@ -596,6 +511,7 @@ function generatePowerPointHTML(presentation: any, formData: any): string {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            z-index: 10;
         }
         .gmdc-logo {
             font-weight: bold;
@@ -611,7 +527,7 @@ function generatePowerPointHTML(presentation: any, formData: any): string {
             font-size: 16px;
         }
         .title-slide {
-            background: url('/content-slide-background.png') no-repeat center center;
+            background: url('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Main%20Slide.jpg-zFK4QxoegV9krsPbigcwKDu936VkkA.jpeg') no-repeat center center;
             background-size: cover;
             display: flex;
             flex-direction: column;
@@ -622,14 +538,14 @@ function generatePowerPointHTML(presentation: any, formData: any): string {
         .slide-title {
             font-size: 64px;
             font-weight: bold;
-            color: #16a34a;
+            color: #d97706;
             margin-bottom: 40px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        }
-        .slide-date {
-            font-size: 24px;
-            color: #6b7280;
-            margin-top: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: absolute;
+            top: 320px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
         }
         .content-slide {
             background: url('/content-slide-background.png') no-repeat center center;
@@ -639,6 +555,9 @@ function generatePowerPointHTML(presentation: any, formData: any): string {
             margin-top: 80px;
             height: calc(100% - 140px);
             overflow: hidden;
+            background: rgba(255,255,255,0.9);
+            padding: 40px;
+            border-radius: 10px;
         }
         .slide-content h2 {
             font-size: 48px;
@@ -667,7 +586,7 @@ function generatePowerPointHTML(presentation: any, formData: any): string {
             width: 100%;
             border-collapse: collapse;
             margin: 30px 0;
-            background: rgba(255,255,255,0.9);
+            background: white;
             border-radius: 8px;
             overflow: hidden;
         }
@@ -682,88 +601,153 @@ function generatePowerPointHTML(presentation: any, formData: any): string {
             color: white;
             font-weight: bold;
         }
+        .thank-you-slide {
+            background: url('/content-slide-background.png') no-repeat center center;
+            background-size: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .thank-you-text {
+            font-size: 96px;
+            font-weight: bold;
+            color: #d97706;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .navigation {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        @media print {
+            .slide { 
+                width: 100vw;
+                height: 100vh;
+                position: static;
+                transform: none;
+                page-break-after: always;
+                display: block !important;
+            }
+            .navigation { display: none; }
+        }
     </style>
 </head>
 <body>
-    <!-- Title Slide -->
-    <div class="slide title-slide active">
-        <div class="slide-header">
-            <div class="gmdc-logo">GMDC</div>
-            <div class="slide-number">1</div>
+    <div class="presentation-container">
+         Title Slide 
+        <div class="slide title-slide active">
+            <div class="slide-header">
+                <div class="gmdc-logo">GMDC</div>
+                <div class="slide-number">1</div>
+            </div>
+            <div class="slide-title">${(formData.title || "Presentation Title").replace(/[<>]/g, "")}</div>
         </div>
-        <div class="slide-title">${(formData.title || "Presentation Title").replace(/[<>]/g, "")}</div>
-        ${formData.date ? `<div class="slide-date">${formData.date}</div>` : ""}
+
+        ${
+          presentation.tableOfContents
+            ? `
+        <div class="slide content-slide">
+            <div class="slide-header">
+                <div class="gmdc-logo">GMDC</div>
+                <div class="slide-number">2</div>
+            </div>
+            <div class="slide-content">
+                <h2>Table of Contents</h2>
+                <ul>
+                    ${presentation.tableOfContents
+                      .split("\n")
+                      .filter((item: string) => item.trim())
+                      .map(
+                        (item: string, index: number) => `<li>${index + 1}. ${item.trim().replace(/[<>]/g, "")}</li>`,
+                      )
+                      .join("")}
+                </ul>
+            </div>
+        </div>`
+            : ""
+        }
+
+        ${slides
+          .map(
+            (slide: any, index: number) => `
+        <div class="slide content-slide">
+            <div class="slide-header">
+                <div class="gmdc-logo">GMDC</div>
+                <div class="slide-number">${index + (presentation.tableOfContents ? 3 : 2)}</div>
+            </div>
+            <div class="slide-content">
+                <h2>${(slide.title || "").replace(/[<>]/g, "")}</h2>
+                <div>${slide.content || ""}</div>
+                ${slide.table ? `<div style="margin: 30px 0;">${slide.table}</div>` : ""}
+            </div>
+        </div>`,
+          )
+          .join("")}
+
+         Thank You Slide 
+        <div class="slide thank-you-slide">
+            <div class="slide-header">
+                <div class="gmdc-logo">GMDC</div>
+                <div class="slide-number">${slides.length + (presentation.tableOfContents ? 3 : 2)}</div>
+            </div>
+            <div class="thank-you-text">THANK YOU</div>
+        </div>
     </div>
 
-    ${
-      presentation.tableOfContents
-        ? `
-    <div class="slide content-slide">
-        <div class="slide-header">
-            <div class="gmdc-logo">GMDC</div>
-            <div class="slide-number">2</div>
-        </div>
-        <div class="slide-content">
-            <h2>Table of Contents</h2>
-            <ul>
-                ${presentation.tableOfContents
-                  .split("\n")
-                  .filter((item: string) => item.trim())
-                  .map((item: string, index: number) => `<li>${index + 1}. ${item.trim().replace(/[<>]/g, "")}</li>`)
-                  .join("")}
-            </ul>
-        </div>
-    </div>`
-        : ""
-    }
-
-    ${slides
-      .map(
-        (slide: any, index: number) => `
-    <div class="slide content-slide">
-        <div class="slide-header">
-            <div class="gmdc-logo">GMDC</div>
-            <div class="slide-number">${index + (presentation.tableOfContents ? 3 : 2)}</div>
-        </div>
-        <div class="slide-content">
-            <h2>${(slide.title || "").replace(/[<>]/g, "")}</h2>
-            <div>${slide.content || ""}</div>
-            ${slide.table ? `<div style="margin: 30px 0;">${slide.table}</div>` : ""}
-        </div>
-    </div>`,
-      )
-      .join("")}
-
-    <div class="slide thank-you-slide">
-        <div class="slide-header">
-            <div class="gmdc-logo" style="color: white;">GMDC</div>
-            <div class="slide-number" style="background: rgba(255,255,255,0.2);">${slides.length + (presentation.tableOfContents ? 3 : 2)}</div>
-        </div>
-        <div class="thank-you-text">THANK YOU</div>
+    <div class="navigation">
+        Use arrow keys or spacebar to navigate • Press Ctrl+P to print as PDF
     </div>
 
     <script>
-        // PowerPoint-like navigation
         let currentSlide = 0;
         const slides = document.querySelectorAll('.slide');
         
         function showSlide(n) {
             slides.forEach(slide => slide.classList.remove('active'));
-            if (slides[n]) slides[n].classList.add('active');
+            if (slides[n]) {
+                slides[n].classList.add('active');
+                document.querySelector('.navigation').textContent = 
+                    \`Slide \${n + 1} of \${slides.length} • Use arrow keys to navigate • Press Ctrl+P to print\`;
+            }
         }
         
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
                 currentSlide = Math.min(currentSlide + 1, slides.length - 1);
                 showSlide(currentSlide);
             } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
                 currentSlide = Math.max(currentSlide - 1, 0);
+                showSlide(currentSlide);
+            } else if (e.key === 'Home') {
+                e.preventDefault();
+                currentSlide = 0;
+                showSlide(currentSlide);
+            } else if (e.key === 'End') {
+                e.preventDefault();
+                currentSlide = slides.length - 1;
                 showSlide(currentSlide);
             }
         });
         
-        // Auto-print for PowerPoint conversion
-        setTimeout(() => window.print(), 1000);
+        // Click navigation
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.slide')) {
+                currentSlide = Math.min(currentSlide + 1, slides.length - 1);
+                showSlide(currentSlide);
+            }
+        });
+        
+        showSlide(0);
     </script>
 </body>
 </html>`
