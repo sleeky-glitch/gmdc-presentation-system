@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
+import { createClient } from "@/lib/supabase-server"
+import { generateEmbedding } from "@/lib/openai-embeddings"
 
 const SLIDE_TEMPLATES = {
   EXECUTIVE_SUMMARY: {
@@ -863,6 +865,7 @@ export async function POST(request: NextRequest) {
     const summary = formData.get("summary") as string
     const date = formData.get("date") as string
     const tableOfContents = formData.get("tableOfContents") as string
+    const useSimilarContent = formData.get("useSimilarContent") === "true"
 
     if (!title || !summary) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
@@ -874,6 +877,37 @@ export async function POST(request: NextRequest) {
     }
 
     const openai = new OpenAI({ apiKey: openaiKey })
+
+    let similarPresentationsContext = ""
+    if (useSimilarContent) {
+      try {
+        console.log("[v0] Fetching similar presentations for context...")
+        const queryText = `${title} ${summary}`
+        const queryEmbedding = await generateEmbedding(queryText)
+        const supabase = await createClient()
+
+        const { data: similarSlides, error } = await supabase.rpc("match_slides", {
+          query_embedding: queryEmbedding,
+          match_threshold: 0.75,
+          match_count: 10,
+        })
+
+        if (!error && similarSlides && similarSlides.length > 0) {
+          console.log(`[v0] Found ${similarSlides.length} similar slides for context`)
+          similarPresentationsContext = `\n\nREFERENCE PRESENTATIONS - Use these as examples for style, structure, and content patterns:\n\n${similarSlides
+            .map(
+              (slide: any, idx: number) =>
+                `Example ${idx + 1}:\nTitle: ${slide.title}\nType: ${slide.slide_type}\nContent: ${slide.content}\nBullet Points: ${slide.bullet_points?.join(", ") || "None"}\n`,
+            )
+            .join("\n---\n\n")}`
+        } else {
+          console.log("[v0] No similar presentations found or error occurred:", error)
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching similar content:", error)
+        // Continue without similar content if there's an error
+      }
+    }
 
     const files: File[] = []
     const allEntries = Array.from(formData.entries())
@@ -905,15 +939,17 @@ export async function POST(request: NextRequest) {
     const tocItems = toc.split("\n").filter((item) => item.trim())
     const allDocumentText = documentContents.map((doc) => `${doc.name}: ${doc.text}`).join("\n\n")
 
+    const enhancedDocumentText = allDocumentText + similarPresentationsContext
+
     const slideDistribution = await distributeContentAcrossSlides(documentContents, tocItems)
 
     const contentSlides = []
-    const presentationContext = { title, summary, date }
+    const presentationContext = { title, summary, date, similarPresentationsContext }
 
     for (const slideInfo of slideDistribution) {
       console.log(`Generating slide ${slideInfo.index + 1}: ${slideInfo.title}`)
 
-      const slideContent = await generateSlideContent(openai, slideInfo, allDocumentText, presentationContext)
+      const slideContent = await generateSlideContent(openai, slideInfo, enhancedDocumentText, presentationContext)
 
       contentSlides.push(slideContent)
 
@@ -957,7 +993,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(
-      `Generated comprehensive presentation with ${presentation.slides.length} slides using extensive pipeline`,
+      `Generated comprehensive presentation with ${presentation.slides.length} slides${useSimilarContent ? " using similar presentations context" : ""}`,
     )
     return NextResponse.json(presentation)
   } catch (error) {

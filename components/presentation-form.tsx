@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2, Sparkles, Calendar, FileText, List, Eye, Download } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { Loader2, Sparkles, Calendar, FileText, List, Eye, Download, Brain } from "lucide-react"
 import { FileUpload } from "./file-upload"
 import { toast } from "@/hooks/use-toast"
 
@@ -24,6 +25,7 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedPresentation, setGeneratedPresentation] = useState<any>(null)
+  const [useSimilarContent, setUseSimilarContent] = useState(true)
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -52,6 +54,7 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
       formDataToSend.append("summary", formData.summary)
       formDataToSend.append("date", formData.date)
       formDataToSend.append("tableOfContents", formData.tableOfContents)
+      formDataToSend.append("useSimilarContent", useSimilarContent.toString())
 
       uploadedFiles.forEach((file, index) => {
         formDataToSend.append(`file_${index}`, file)
@@ -165,6 +168,22 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 p-8">
+          {/* Similarity Toggle */}
+          <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+            <div className="flex items-center gap-3">
+              <Brain className="h-5 w-5 text-green-600" />
+              <div>
+                <Label htmlFor="similarity-toggle" className="text-sm font-semibold text-gray-700 cursor-pointer">
+                  Use Similar Presentations
+                </Label>
+                <p className="text-xs text-gray-600 mt-1">
+                  Generate content based on patterns from uploaded reference presentations
+                </p>
+              </div>
+            </div>
+            <Switch id="similarity-toggle" checked={useSimilarContent} onCheckedChange={setUseSimilarContent} />
+          </div>
+
           {/* Basic Information */}
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">

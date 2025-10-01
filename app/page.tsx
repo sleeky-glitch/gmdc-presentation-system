@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Presentation } from "lucide-react"
 import { PresentationForm } from "@/components/presentation-form"
 import { PresentationViewer } from "@/components/presentation-viewer"
+import { PresentationUpload } from "@/components/presentation-upload"
 
 export default function HomePage() {
   const [currentView, setCurrentView] = useState<"form" | "viewer">("form")
@@ -44,6 +45,12 @@ export default function HomePage() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {currentView === "form" && (
+          <div className="max-w-4xl mx-auto mb-8">
+            <PresentationUpload />
+          </div>
+        )}
+
         {/* Main Content */}
         {currentView === "form" ? (
           <PresentationForm onPresentationGenerated={handlePresentationGenerated} />
