@@ -1,5 +1,10 @@
 import { createClient } from "@supabase/supabase-js"
 import OpenAI from "openai"
+import { config } from "dotenv"
+import { resolve } from "path"
+
+// Load environment variables from .env.local
+config({ path: resolve(process.cwd(), ".env.local") })
 
 // GMDC Knowledge Base Content
 const GMDC_KNOWLEDGE = {
@@ -172,6 +177,18 @@ async function ingestKnowledge() {
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY!,
   })
+
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_URL is not set in .env.local")
+  }
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set in .env.local")
+  }
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is not set in .env.local")
+  }
+
+  console.log("✓ Environment variables loaded successfully")
 
   try {
     // Create knowledge base document
