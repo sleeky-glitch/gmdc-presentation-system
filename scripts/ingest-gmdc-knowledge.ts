@@ -196,7 +196,8 @@ async function ingestKnowledge() {
       .from("knowledge_base_documents")
       .insert({
         title: GMDC_KNOWLEDGE.title,
-        source_type: "manual",
+        document_type: "knowledge_base",
+        source: "manual_ingestion",
         metadata: {
           ingestion_date: new Date().toISOString(),
           sections: GMDC_KNOWLEDGE.sections.length,
