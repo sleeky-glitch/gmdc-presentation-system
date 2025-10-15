@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Loader2, Sparkles, Calendar, FileText, List, Eye, Download, Brain } from "lucide-react"
+import { Loader2, Sparkles, Calendar, FileText, List, Eye, Download, Brain, BookOpen } from "lucide-react"
 import { FileUpload } from "./file-upload"
 import { toast } from "@/hooks/use-toast"
 
@@ -26,6 +26,7 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedPresentation, setGeneratedPresentation] = useState<any>(null)
   const [useSimilarContent, setUseSimilarContent] = useState(true)
+  const [useKnowledgeBase, setUseKnowledgeBase] = useState(true)
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -48,13 +49,13 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
     setIsGenerating(true)
 
     try {
-      // Create FormData for file upload
       const formDataToSend = new FormData()
       formDataToSend.append("title", formData.title)
       formDataToSend.append("summary", formData.summary)
       formDataToSend.append("date", formData.date)
       formDataToSend.append("tableOfContents", formData.tableOfContents)
       formDataToSend.append("useSimilarContent", useSimilarContent.toString())
+      formDataToSend.append("useKnowledgeBase", useKnowledgeBase.toString())
 
       uploadedFiles.forEach((file, index) => {
         formDataToSend.append(`file_${index}`, file)
@@ -114,7 +115,6 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
 
       const fileName = `${formData.title?.replace(/[^a-z0-9]/gi, "_") || "GMDC-Presentation"}.pptx`
 
-      // Create download link
       const url = URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = url
@@ -126,7 +126,6 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
 
       link.click()
 
-      // Cleanup
       setTimeout(() => {
         if (document.body.contains(link)) {
           document.body.removeChild(link)
@@ -168,7 +167,21 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 p-8">
-          {/* Similarity Toggle */}
+          <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-3">
+              <BookOpen className="h-5 w-5 text-blue-600" />
+              <div>
+                <Label htmlFor="knowledge-toggle" className="text-sm font-semibold text-gray-700 cursor-pointer">
+                  Use Knowledge Base
+                </Label>
+                <p className="text-xs text-gray-600 mt-1">
+                  Generate content using domain-specific knowledge from uploaded documents
+                </p>
+              </div>
+            </div>
+            <Switch id="knowledge-toggle" checked={useKnowledgeBase} onCheckedChange={setUseKnowledgeBase} />
+          </div>
+
           <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
             <div className="flex items-center gap-3">
               <Brain className="h-5 w-5 text-green-600" />
@@ -184,7 +197,6 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
             <Switch id="similarity-toggle" checked={useSimilarContent} onCheckedChange={setUseSimilarContent} />
           </div>
 
-          {/* Basic Information */}
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="title" className="flex items-center gap-2 text-gray-700 font-semibold">
@@ -214,7 +226,6 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
             </div>
           </div>
 
-          {/* Summary */}
           <div className="space-y-2">
             <Label htmlFor="summary" className="text-gray-700 font-semibold">
               Brief Summary *
@@ -229,7 +240,6 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
             />
           </div>
 
-          {/* Table of Contents */}
           <div className="space-y-2">
             <Label htmlFor="tableOfContents" className="flex items-center gap-2 text-gray-700 font-semibold">
               <List className="h-4 w-4 text-green-600" />
@@ -248,9 +258,8 @@ export function PresentationForm({ onPresentationGenerated }: PresentationFormPr
             </p>
           </div>
 
-          {/* File Upload */}
           <div className="space-y-2">
-            <Label className="text-gray-700 font-semibold">Knowledge Base Documents (Optional)</Label>
+            <Label className="text-gray-700 font-semibold">Supporting Documents (Optional)</Label>
             <FileUpload onFilesUploaded={handleFilesUploaded} />
             <p className="text-sm text-gray-600">Upload Excel, PDF, or Word documents to enhance content generation</p>
           </div>
@@ -421,7 +430,6 @@ function generatePresentationHTML(presentation: any, formData: any): string {
 </head>
 <body>
     <div class="presentation-container">
-        <!-- Title Slide -->
         <div class="slide">
             <div class="slide-header">
                 <div class="gmdc-logo">GMDC</div>
@@ -661,7 +669,6 @@ function generatePowerPointHTML(presentation: any, formData: any): string {
 </head>
 <body>
     <div class="presentation-container">
-         Title Slide 
         <div class="slide title-slide active">
             <div class="slide-header">
                 <div class="gmdc-logo">GMDC</div>
@@ -711,7 +718,6 @@ function generatePowerPointHTML(presentation: any, formData: any): string {
           )
           .join("")}
 
-         Thank You Slide 
         <div class="slide thank-you-slide">
             <div class="slide-header">
                 <div class="gmdc-logo">GMDC</div>
@@ -758,7 +764,6 @@ function generatePowerPointHTML(presentation: any, formData: any): string {
             }
         });
         
-        // Click navigation
         document.addEventListener('click', (e) => {
             if (e.target.closest('.slide')) {
                 currentSlide = Math.min(currentSlide + 1, slides.length - 1);

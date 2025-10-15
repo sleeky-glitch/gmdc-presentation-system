@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
 import { createClient } from "@/lib/supabase-server"
 import { generateEmbedding } from "@/lib/openai-embeddings"
+import { searchKnowledgeBase } from "@/lib/knowledge-base-parser"
 
 const SLIDE_TEMPLATES = {
   EXECUTIVE_SUMMARY: {
@@ -866,6 +867,7 @@ export async function POST(request: NextRequest) {
     const date = formData.get("date") as string
     const tableOfContents = formData.get("tableOfContents") as string
     const useSimilarContent = formData.get("useSimilarContent") === "true"
+    const useKnowledgeBase = formData.get("useKnowledgeBase") === "true"
 
     if (!title || !summary) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
@@ -879,6 +881,8 @@ export async function POST(request: NextRequest) {
     const openai = new OpenAI({ apiKey: openaiKey })
 
     let similarPresentationsContext = ""
+    let knowledgeBaseContext = ""
+
     if (useSimilarContent) {
       try {
         console.log("[v0] Fetching similar presentations for context...")
@@ -905,7 +909,28 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         console.error("[v0] Error fetching similar content:", error)
-        // Continue without similar content if there's an error
+      }
+    }
+
+    if (useKnowledgeBase) {
+      try {
+        console.log("[v0] Searching knowledge base for relevant content...")
+        const queryText = `${title} ${summary}`
+        const knowledgeResults = await searchKnowledgeBase(queryText, 0.7, 10)
+
+        if (knowledgeResults && knowledgeResults.length > 0) {
+          console.log(`[v0] Found ${knowledgeResults.length} relevant knowledge base chunks`)
+          knowledgeBaseContext = `\n\nDOMAIN KNOWLEDGE BASE - Use this authoritative content for accurate facts, figures, and context:\n\n${knowledgeResults
+            .map(
+              (result: any, idx: number) =>
+                `Knowledge ${idx + 1} (${result.documentTitle}, similarity: ${(result.similarity * 100).toFixed(1)}%):\n${result.content}\nMetadata: ${JSON.stringify(result.metadata)}\n`,
+            )
+            .join("\n---\n\n")}`
+        } else {
+          console.log("[v0] No relevant knowledge base content found")
+        }
+      } catch (error) {
+        console.error("[v0] Error searching knowledge base:", error)
       }
     }
 
@@ -939,7 +964,7 @@ export async function POST(request: NextRequest) {
     const tocItems = toc.split("\n").filter((item) => item.trim())
     const allDocumentText = documentContents.map((doc) => `${doc.name}: ${doc.text}`).join("\n\n")
 
-    const enhancedDocumentText = allDocumentText + similarPresentationsContext
+    const enhancedDocumentText = allDocumentText + similarPresentationsContext + knowledgeBaseContext
 
     const slideDistribution = await distributeContentAcrossSlides(documentContents, tocItems)
 
@@ -993,7 +1018,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(
-      `Generated comprehensive presentation with ${presentation.slides.length} slides${useSimilarContent ? " using similar presentations context" : ""}`,
+      `Generated comprehensive presentation with ${presentation.slides.length} slides${useSimilarContent ? " using similar presentations" : ""}${useKnowledgeBase ? " with knowledge base context" : ""}`,
     )
     return NextResponse.json(presentation)
   } catch (error) {
