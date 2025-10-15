@@ -180,6 +180,149 @@ export async function POST(request: NextRequest) {
           color: "374151",
           fontFace: "Calibri",
         })
+      } else if (slide.type === "annexure") {
+        const annexureSlide = pres.addSlide()
+
+        annexureSlide.background = {
+          path: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-LFnRVQiz9vMDJdWEQl4VHawgbzCxLR.png",
+        }
+
+        // Add title
+        annexureSlide.addText(slide.title || "Annexure", {
+          x: "5%",
+          y: "5%",
+          w: "90%",
+          h: "8%",
+          align: "left",
+          valign: "middle",
+          fontSize: 24,
+          bold: true,
+          color: "111827",
+          fontFace: "Calibri",
+        })
+
+        // Add subtitle if present
+        if (slide.subtitle) {
+          annexureSlide.addText(slide.subtitle, {
+            x: "5%",
+            y: "13%",
+            w: "90%",
+            h: "5%",
+            align: "left",
+            valign: "middle",
+            fontSize: 16,
+            color: "374151",
+            fontFace: "Calibri",
+          })
+        }
+
+        let currentY = slide.subtitle ? 20 : 15
+
+        // Add tables
+        if (slide.tables && slide.tables.length > 0) {
+          slide.tables.forEach((table: any, tableIndex: number) => {
+            if (currentY > 75) return // Skip if no space
+
+            // Add table title
+            if (table.title) {
+              annexureSlide.addText(table.title, {
+                x: "5%",
+                y: `${currentY}%`,
+                w: "90%",
+                h: "4%",
+                align: "left",
+                valign: "middle",
+                fontSize: 14,
+                bold: true,
+                color: "111827",
+                fontFace: "Calibri",
+              })
+              currentY += 5
+            }
+
+            // Prepare table data
+            const tableData = [
+              table.headers.map((h: string) => ({
+                text: h,
+                options: { bold: true, fill: "F3F4F6", color: "111827", fontSize: 10 },
+              })),
+              ...table.rows.slice(0, 5).map((row: any[]) =>
+                row.map((cell: any) => ({
+                  text: String(cell),
+                  options: { fontSize: 9, color: "374151" },
+                })),
+              ),
+            ]
+
+            // Add table
+            annexureSlide.addTable(tableData, {
+              x: "5%",
+              y: `${currentY}%`,
+              w: "90%",
+              h: `${Math.min(25, table.rows.length * 3 + 5)}%`,
+              border: { pt: 1, color: "D1D5DB" },
+              fontSize: 9,
+              fontFace: "Calibri",
+            })
+
+            currentY += Math.min(30, table.rows.length * 3 + 8)
+          })
+        }
+
+        // Add charts (simplified representation as text for now)
+        if (slide.charts && slide.charts.length > 0 && currentY < 75) {
+          slide.charts.forEach((chart: any, chartIndex: number) => {
+            if (currentY > 75) return
+
+            if (chart.title) {
+              annexureSlide.addText(chart.title, {
+                x: "5%",
+                y: `${currentY}%`,
+                w: "90%",
+                h: "4%",
+                align: "left",
+                valign: "middle",
+                fontSize: 14,
+                bold: true,
+                color: "111827",
+                fontFace: "Calibri",
+              })
+              currentY += 5
+            }
+
+            // Add chart data as text representation
+            const chartText = chart.data
+              .map((d: any) => `${d.label}: ${d.value}${d.target ? ` (Target: ${d.target})` : ""}`)
+              .join("\n")
+
+            annexureSlide.addText(chartText, {
+              x: "5%",
+              y: `${currentY}%`,
+              w: "90%",
+              h: "15%",
+              align: "left",
+              valign: "top",
+              fontSize: 11,
+              color: "374151",
+              fontFace: "Calibri",
+            })
+
+            currentY += 18
+          })
+        }
+
+        // Add slide number
+        annexureSlide.addText(slideNumber.toString(), {
+          x: "85%",
+          y: "85%",
+          w: "6%",
+          h: "6%",
+          align: "right",
+          valign: "middle",
+          fontSize: 12,
+          color: "374151",
+          fontFace: "Calibri",
+        })
       } else {
         const contentSlide = pres.addSlide()
 

@@ -43,11 +43,12 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData.data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={chartData.xKey || "name"} />
+              <XAxis dataKey="label" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey={chartData.yKey || "value"} fill="#0088FE" />
+              <Bar dataKey="value" fill="#0088FE" />
+              {chartData.data[0]?.target !== undefined && <Bar dataKey="target" fill="#00C49F" />}
             </BarChart>
           </ResponsiveContainer>
         )
@@ -61,10 +62,10 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={({ label, value }) => `${label}: ${value}`}
                 outerRadius={80}
                 fill="#8884d8"
-                dataKey={chartData.valueKey || "value"}
+                dataKey="value"
               >
                 {chartData.data.map((entry: any, index: number) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -80,11 +81,11 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData.data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={chartData.xKey || "name"} />
+              <XAxis dataKey="label" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey={chartData.yKey || "value"} stroke="#0088FE" />
+              <Line type="monotone" dataKey="value" stroke="#0088FE" />
             </LineChart>
           </ResponsiveContainer>
         )
@@ -98,14 +99,15 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
     if (!tableData || !tableData.headers || !tableData.rows) return null
 
     return (
-      <div className="h-full">
+      <div className="mb-4">
+        {tableData.title && <h4 className="text-sm font-semibold mb-2 text-gray-900">{tableData.title}</h4>}
         <table className="w-full border-collapse border border-gray-300 dark:border-gray-600 text-xs">
           <thead>
             <tr className="bg-gray-100 dark:bg-gray-800">
               {tableData.headers.map((header: string, index: number) => (
                 <th
                   key={index}
-                  className="border border-gray-300 dark:border-gray-600 px-1 py-1 text-left font-semibold text-xs"
+                  className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-left font-semibold text-xs"
                 >
                   {header}
                 </th>
@@ -113,13 +115,13 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
             </tr>
           </thead>
           <tbody>
-            {tableData.rows.slice(0, 8).map((row: any[], rowIndex: number) => (
+            {tableData.rows.map((row: any[], rowIndex: number) => (
               <tr
                 key={rowIndex}
                 className={rowIndex % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"}
               >
                 {row.map((cell: any, cellIndex: number) => (
-                  <td key={cellIndex} className="border border-gray-300 dark:border-gray-600 px-1 py-1 text-xs">
+                  <td key={cellIndex} className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs">
                     {cell}
                   </td>
                 ))}
@@ -127,11 +129,6 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
             ))}
           </tbody>
         </table>
-        {tableData.rows.length > 8 && (
-          <div className="text-center text-xs text-gray-600 mt-2 italic">
-            ...continued on next slide ({tableData.rows.length - 8} more rows)
-          </div>
-        )}
       </div>
     )
   }
@@ -244,6 +241,57 @@ export function SlideRenderer({ slide, slideNumber, totalSlides }: SlideRenderer
               </div>
             )}
           </div>
+        </div>
+
+        <div className="absolute bottom-4 right-4 text-sm text-gray-700">{slideNumber}</div>
+      </div>
+    )
+  }
+
+  if (slide.type === "annexure") {
+    return (
+      <div
+        className="h-full p-4 flex flex-col"
+        style={{
+          backgroundImage: "url(/content-slide-background.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        <div className="mb-3">
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">{slide.title}</h2>
+          {slide.subtitle && <h3 className="text-base text-gray-700">{slide.subtitle}</h3>}
+        </div>
+
+        <div className="flex-1 overflow-y-auto space-y-4">
+          {slide.tables && slide.tables.length > 0 && (
+            <div className="space-y-4">
+              {slide.tables.map((table: any, index: number) => (
+                <div key={index}>{renderTable(table)}</div>
+              ))}
+            </div>
+          )}
+
+          {slide.charts && slide.charts.length > 0 && (
+            <div className="grid grid-cols-2 gap-4">
+              {slide.charts.map((chart: any, index: number) => (
+                <div key={index} className="bg-white/80 p-2 rounded">
+                  {chart.title && <h4 className="text-sm font-semibold mb-2 text-gray-900">{chart.title}</h4>}
+                  {renderChart(chart)}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {(!slide.tables || slide.tables.length === 0) && (!slide.charts || slide.charts.length === 0) && (
+            <div className="flex-1 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
+              <div className="text-center text-gray-500">
+                <p className="text-lg font-semibold mb-2">Annexure Slide</p>
+                <p className="text-sm">Space reserved for graphs, tables, and supporting data</p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="absolute bottom-4 right-4 text-sm text-gray-700">{slideNumber}</div>

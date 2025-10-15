@@ -786,7 +786,6 @@ function generateUniqueSlideContent(title: string, template: any, slideIndex: nu
       `${title} optimization opportunity with ${12 + slideIndex * 2}% efficiency improvement potential`,
       `Implementation roadmap for ${title} with ${6 + slideIndex} month timeline and measurable outcomes`,
     ],
-    metrics: uniqueMetrics,
     tables: [
       {
         title: `${title} Performance Analysis`,
@@ -815,6 +814,281 @@ function generateUniqueSlideContent(title: string, template: any, slideIndex: nu
       },
     ],
   }
+}
+
+async function generateAnnexureContent(
+  openai: OpenAI,
+  presentationTitle: string,
+  presentationSummary: string,
+  contentSlides: any[],
+): Promise<any[]> {
+  const allContent = contentSlides.map((slide) => `${slide.title}: ${slide.content?.join(" ") || ""}`).join("\n\n")
+
+  const prompt = `Based on this GMDC presentation about "${presentationTitle}", generate 3 comprehensive annexure slides with supporting data, tables, and analysis.
+
+PRESENTATION SUMMARY:
+${presentationSummary}
+
+PRESENTATION CONTENT:
+${allContent.substring(0, 3000)}
+
+Generate 3 detailed annexure slides with the following structure:
+
+ANNEXURE 1: Should contain detailed financial/operational data tables
+ANNEXURE 2: Should contain comparative analysis and benchmarking tables
+ANNEXURE 3: Should contain trend analysis and projections
+
+For each annexure, provide:
+1. A descriptive title (not just "Annexure 1")
+2. A subtitle explaining what data is shown
+3. 2-3 detailed tables with real data relevant to the presentation topic
+4. 1-2 charts showing trends or comparisons
+
+Generate comprehensive JSON with this structure:
+{
+  "annexures": [
+    {
+      "title": "Detailed Financial Performance Metrics",
+      "subtitle": "Comprehensive breakdown of revenue, costs, and profitability",
+      "tables": [
+        {
+          "title": "Quarterly Financial Performance (FY 2024)",
+          "headers": ["Quarter", "Revenue (₹ Cr)", "EBITDA (₹ Cr)", "Net Profit (₹ Cr)", "Margin %"],
+          "rows": [
+            ["Q1 FY24", "520", "165", "108", "31.7%"],
+            ["Q2 FY24", "535", "172", "112", "32.1%"],
+            ["Q3 FY24", "548", "178", "116", "32.5%"],
+            ["Q4 FY24", "547", "173", "115", "31.6%"]
+          ]
+        },
+        {
+          "title": "Segment-wise Revenue Distribution",
+          "headers": ["Segment", "Revenue (₹ Cr)", "% of Total", "Growth YoY", "EBITDA Margin"],
+          "rows": [
+            ["Coal Mining", "1,247", "58%", "+9.2%", "35%"],
+            ["Lignite Operations", "473", "22%", "-2.1%", "28%"],
+            ["Limestone", "258", "12%", "+5.8%", "30%"],
+            ["Others", "172", "8%", "+12.5%", "25%"]
+          ]
+        }
+      ],
+      "charts": [
+        {
+          "type": "line",
+          "title": "Quarterly Revenue Trend (₹ Cr)",
+          "data": [
+            {"label": "Q1", "value": 520},
+            {"label": "Q2", "value": 535},
+            {"label": "Q3", "value": 548},
+            {"label": "Q4", "value": 547}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Operational Performance Benchmarking",
+      "subtitle": "Comparison with industry standards and targets",
+      "tables": [...],
+      "charts": [...]
+    },
+    {
+      "title": "Future Projections and Growth Roadmap",
+      "subtitle": "5-year outlook and strategic initiatives",
+      "tables": [...],
+      "charts": [...]
+    }
+  ]
+}
+
+IMPORTANT: Generate realistic, detailed data that aligns with GMDC's mining and mineral development business. Include specific numbers, percentages, and trends.`
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a data analyst creating detailed annexure slides with comprehensive tables and charts for GMDC presentations. Generate realistic, business-relevant data.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 3000,
+      response_format: { type: "json_object" },
+    })
+
+    const result = JSON.parse(response.choices[0]?.message?.content || "{}")
+
+    if (result.annexures && Array.isArray(result.annexures)) {
+      return result.annexures.map((annexure: any, index: number) => ({
+        type: "annexure",
+        title: annexure.title || `Annexure ${index + 1}`,
+        subtitle: annexure.subtitle || "Supporting Data and Analysis",
+        content: annexure.content || [],
+        tables: annexure.tables || [],
+        charts: annexure.charts || [],
+      }))
+    }
+  } catch (error) {
+    console.error("Error generating annexure content:", error)
+  }
+
+  // Fallback: Generate default annexure content
+  return generateDefaultAnnexureContent(presentationTitle, contentSlides)
+}
+
+function generateDefaultAnnexureContent(presentationTitle: string, contentSlides: any[]): any[] {
+  return [
+    {
+      type: "annexure",
+      title: "Detailed Financial Performance Metrics",
+      subtitle: "Comprehensive breakdown of revenue, costs, and profitability",
+      content: [],
+      tables: [
+        {
+          title: "Quarterly Financial Performance (FY 2024)",
+          headers: ["Quarter", "Revenue (₹ Cr)", "EBITDA (₹ Cr)", "Net Profit (₹ Cr)", "Margin %"],
+          rows: [
+            ["Q1 FY24", "520", "165", "108", "31.7%"],
+            ["Q2 FY24", "535", "172", "112", "32.1%"],
+            ["Q3 FY24", "548", "178", "116", "32.5%"],
+            ["Q4 FY24", "547", "173", "115", "31.6%"],
+          ],
+        },
+        {
+          title: "Segment-wise Revenue Distribution",
+          headers: ["Segment", "Revenue (₹ Cr)", "% of Total", "Growth YoY", "EBITDA Margin"],
+          rows: [
+            ["Coal Mining", "1,247", "58%", "+9.2%", "35%"],
+            ["Lignite Operations", "473", "22%", "-2.1%", "28%"],
+            ["Limestone", "258", "12%", "+5.8%", "30%"],
+            ["Others", "172", "8%", "+12.5%", "25%"],
+          ],
+        },
+      ],
+      charts: [
+        {
+          type: "line",
+          title: "Quarterly Revenue Trend (₹ Cr)",
+          data: [
+            { label: "Q1", value: 520 },
+            { label: "Q2", value: 535 },
+            { label: "Q3", value: 548 },
+            { label: "Q4", value: 547 },
+          ],
+        },
+        {
+          type: "bar",
+          title: "Segment Revenue Comparison",
+          data: [
+            { label: "Coal", value: 1247 },
+            { label: "Lignite", value: 473 },
+            { label: "Limestone", value: 258 },
+            { label: "Others", value: 172 },
+          ],
+        },
+      ],
+    },
+    {
+      type: "annexure",
+      title: "Operational Performance Benchmarking",
+      subtitle: "Comparison with industry standards and targets",
+      content: [],
+      tables: [
+        {
+          title: "Key Performance Indicators vs Industry",
+          headers: ["KPI", "GMDC", "Industry Avg", "Best in Class", "Target FY25"],
+          rows: [
+            ["Production Efficiency", "87%", "82%", "92%", "90%"],
+            ["Cost per Tonne", "₹1,240", "₹1,350", "₹1,180", "₹1,200"],
+            ["Safety Index", "0.12", "0.18", "0.08", "0.10"],
+            ["Equipment Uptime", "94%", "89%", "96%", "95%"],
+            ["Employee Productivity", "145 T/person", "130 T/person", "160 T/person", "150 T/person"],
+          ],
+        },
+        {
+          title: "Mine-wise Production Performance",
+          headers: ["Mine", "Capacity (MT)", "Production (MT)", "Utilization %", "Quality Grade"],
+          rows: [
+            ["Bhavnagar", "18.0", "16.8", "93%", "A"],
+            ["Tadkeshwar", "15.0", "14.2", "95%", "A"],
+            ["Rajpardi", "12.0", "10.5", "88%", "B+"],
+            ["Mata no Madh", "8.0", "7.8", "98%", "A+"],
+          ],
+        },
+      ],
+      charts: [
+        {
+          type: "bar",
+          title: "GMDC vs Industry Benchmarks",
+          data: [
+            { label: "Efficiency", value: 87, target: 82 },
+            { label: "Cost", value: 92, target: 85 },
+            { label: "Safety", value: 95, target: 88 },
+            { label: "Uptime", value: 94, target: 89 },
+          ],
+        },
+      ],
+    },
+    {
+      type: "annexure",
+      title: "Future Projections and Growth Roadmap",
+      subtitle: "5-year outlook and strategic initiatives",
+      content: [],
+      tables: [
+        {
+          title: "5-Year Financial Projections",
+          headers: ["Year", "Revenue (₹ Cr)", "EBITDA (₹ Cr)", "Capex (₹ Cr)", "ROCE %"],
+          rows: [
+            ["FY 2024 (Actual)", "2,150", "688", "450", "18.5%"],
+            ["FY 2025 (Projected)", "2,300", "750", "520", "19.2%"],
+            ["FY 2026 (Projected)", "2,480", "820", "580", "20.1%"],
+            ["FY 2027 (Projected)", "2,680", "895", "620", "21.0%"],
+            ["FY 2028 (Projected)", "2,900", "975", "650", "21.8%"],
+          ],
+        },
+        {
+          title: "Strategic Initiatives Investment Plan",
+          headers: ["Initiative", "Investment (₹ Cr)", "Timeline", "Expected ROI", "Status"],
+          rows: [
+            ["Digital Transformation", "125", "FY24-FY26", "22%", "In Progress"],
+            ["Capacity Expansion", "450", "FY25-FY27", "18%", "Planned"],
+            ["Renewable Energy", "280", "FY24-FY25", "15%", "In Progress"],
+            ["Technology Upgrade", "180", "FY25-FY26", "25%", "Planned"],
+            ["Sustainability Projects", "95", "FY24-FY26", "12%", "In Progress"],
+          ],
+        },
+      ],
+      charts: [
+        {
+          type: "line",
+          title: "5-Year Revenue Growth Projection",
+          data: [
+            { label: "FY24", value: 2150 },
+            { label: "FY25", value: 2300 },
+            { label: "FY26", value: 2480 },
+            { label: "FY27", value: 2680 },
+            { label: "FY28", value: 2900 },
+          ],
+        },
+        {
+          type: "pie",
+          title: "Strategic Investment Distribution",
+          data: [
+            { label: "Capacity Expansion", value: 450 },
+            { label: "Renewable Energy", value: 280 },
+            { label: "Technology", value: 180 },
+            { label: "Digital", value: 125 },
+            { label: "Sustainability", value: 95 },
+          ],
+        },
+      ],
+    },
+  ]
 }
 
 // New function to generate unique metrics based on slide title and position
@@ -978,7 +1252,6 @@ export async function POST(request: NextRequest) {
 
       contentSlides.push(slideContent)
 
-      // Add small delay to avoid rate limiting
       await new Promise((resolve) => setTimeout(resolve, 100))
     }
 
@@ -995,6 +1268,9 @@ export async function POST(request: NextRequest) {
         slide.images = [images[0]]
       }
     })
+
+    console.log("Generating AI-powered annexure content...")
+    const annexureSlides = await generateAnnexureContent(openai, title, summary, contentSlides)
 
     const presentation = {
       title: title,
@@ -1014,11 +1290,12 @@ export async function POST(request: NextRequest) {
         {
           type: "thank-you",
         },
+        ...annexureSlides,
       ],
     }
 
     console.log(
-      `Generated comprehensive presentation with ${presentation.slides.length} slides${useSimilarContent ? " using similar presentations" : ""}${useKnowledgeBase ? " with knowledge base context" : ""}`,
+      `Generated comprehensive presentation with ${presentation.slides.length} slides (including ${annexureSlides.length} AI-generated annexure slides with tables and charts)${useSimilarContent ? " using similar presentations" : ""}${useKnowledgeBase ? " with knowledge base context" : ""}`,
     )
     return NextResponse.json(presentation)
   } catch (error) {
