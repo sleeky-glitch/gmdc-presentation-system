@@ -233,11 +233,11 @@ async function ingestKnowledge() {
         const { error: chunkError } = await supabase.from("knowledge_base_chunks").insert({
           document_id: kbDoc.id,
           content: chunk,
+          chunk_index: i,
           embedding: embedding,
           metadata: {
             section_title: section.title,
             category: section.category,
-            chunk_index: i,
             total_chunks: chunks.length,
           },
         })
